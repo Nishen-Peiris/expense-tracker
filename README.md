@@ -13,18 +13,19 @@ batch/
 
 ## Release Flow
 
-The packaged deployment artifact is produced from both applications:
+The shell script prepares the backend for container packaging:
 
 1. Build the frontend
 2. Copy the frontend build output into the backend static resources
-3. Package the Spring Boot application
-4. Copy the final JAR into the deployment directory
+3. Build the backend container or package from `backend/`
 
 Run:
 
 ```bash
 bash scripts/build-release.sh
 ```
+
+The Dockerfile in `backend/` handles the backend packaging step.
 
 ## Applications
 

@@ -39,7 +39,7 @@ services:
       DB_PORT: 3306
       DB_NAME: expense_tracker
       DB_USERNAME: expense_user
-      DB_PASSWORD: expense_user_password
+      DB_PASSWORD: change-me
       DB_PARAMS: useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       JPA_DDL_AUTO: update
       JPA_SHOW_SQL: "false"
