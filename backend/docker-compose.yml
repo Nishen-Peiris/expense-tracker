@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: expense-tracker-ollama
+    restart: always
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: expense-tracker-ollama-pull
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+    entrypoint:
+      - /bin/sh
+      - -c
+    command: ollama pull "$${OLLAMA_MODEL}"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: "no"
+
+  expense-tracker-backend:
+    build:
+      context: .
+    image: expense-tracker-backend:latest
+    container_name: expense-tracker-backend
+    restart: always
+    depends_on:
+      - ollama
+      - ollama-pull
+    env_file:
+      - .env
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434/v1
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+
+volumes:
+  ollama-data:
