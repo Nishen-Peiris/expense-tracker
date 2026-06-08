@@ -5,7 +5,7 @@ Monorepo for the Expense Tracker application.
 ## Structure
 
 ```text
-batch/
+expense-tracker/
   frontend/   Node/Vite frontend
   backend/    Spring Boot backend
   scripts/    Release and utility scripts
