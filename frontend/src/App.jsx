@@ -37,7 +37,6 @@ const UI_TEXT = {
     spendingByCategory: 'Spending by Category',
     categoryReport: 'Category Report',
     allCategories: 'All Categories',
-    netBalance: 'Net Balance',
     transactions: 'Transactions',
     recentTransactions: 'Recent Transactions',
     deleting: 'Deleting...',
@@ -726,15 +725,6 @@ function App() {
                                 </div>
                             </div>
 
-                            <div className="surface-subtle mt-3 rounded-2xl p-4">
-                                <p className="metric-title">{UI_TEXT.netBalance}</p>
-                                <p className={`summary-net-value tabular-nums ${remainingToneClass}`}>
-                                    <CurrencyAmount
-                                        amount={reportSummary.remaining}
-                                        valueClassName="tabular-nums"
-                                    />
-                                </p>
-                            </div>
                         </>
                     ) : (
                         <div className="mt-4 grid grid-cols-2 gap-3">
