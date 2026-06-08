@@ -17,6 +17,37 @@ const CATEGORIES = [
 
 const REPORT_CATEGORIES = CATEGORIES.filter(category => category !== 'Salary')
 
+const UI_TEXT = {
+    availableBalance: 'Available Balance',
+    reportingPeriod: 'Reporting Period',
+    income: 'Income',
+    expenses: 'Expenses',
+    pasteBankingSms: 'Paste Banking SMS',
+    pasteBankingSmsPlaceholder: 'Paste the banking SMS here...',
+    analyzeBankingSms: 'Analyze Banking SMS',
+    analyzingBankingSms: 'Analyzing Banking SMS...',
+    reviewTransaction: 'Review Transaction',
+    type: 'Type',
+    amount: 'Amount',
+    merchant: 'Merchant',
+    category: 'Category',
+    transactionDate: 'Transaction Date',
+    saveTransaction: 'Save Transaction',
+    savingTransaction: 'Saving Transaction...',
+    spendingByCategory: 'Spending by Category',
+    categoryReport: 'Category Report',
+    allCategories: 'All Categories',
+    netBalance: 'Net Balance',
+    transactions: 'Transactions',
+    recentTransactions: 'Recent Transactions',
+    deleting: 'Deleting...',
+    delete: 'Delete',
+    noTransactionsForCategory: 'No transactions found for the selected category.',
+    parseSmsError: 'Could not analyze the banking SMS.',
+    saveTransactionError: 'Could not save the transaction.',
+    deleteTransactionError: 'Could not delete the transaction.',
+}
+
 const defaultCategoryForType = (type) => {
     return type === 'INCOME'
         ? 'Salary'
@@ -252,7 +283,7 @@ function App() {
             })
 
         } catch (e) {
-            alert('Failed to parse SMS')
+            alert(UI_TEXT.parseSmsError)
         }
 
         setLoading(false)
@@ -284,7 +315,7 @@ function App() {
             setSms('')
 
         } catch (e) {
-            alert('Failed to save transaction')
+            alert(UI_TEXT.saveTransactionError)
         } finally {
             setSaving(false)
         }
@@ -297,8 +328,7 @@ function App() {
         }
 
         const merchant = transaction.merchant || transaction.category
-        const confirmed = window.confirm(`Delete
-        ${merchant} from your transactions?`)
+        const confirmed = window.confirm(`Delete "${merchant}" from your transactions?`)
 
         if (!confirmed) {
             return
@@ -312,7 +342,7 @@ function App() {
             await loadTransactions()
 
         } catch (e) {
-            alert('Failed to delete transaction')
+            alert(UI_TEXT.deleteTransactionError)
         } finally {
             setDeletingTransactionId(null)
         }
@@ -380,7 +410,7 @@ function App() {
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
                     <div className="flex items-start justify-between gap-3">
-                        <p className="text-muted">Available</p>
+                        <p className="text-muted">{UI_TEXT.availableBalance}</p>
 
                         <label className="relative block h-10 w-10 shrink-0">
                             <span
@@ -427,13 +457,13 @@ function App() {
                     </h1>
 
                     <p className="text-muted mt-2">
-                        Based on {formatDateRange(selectedDateRange)}
+                        {UI_TEXT.reportingPeriod}: {formatDateRange(selectedDateRange)}
                     </p>
 
-                    <div className="grid grid-cols-2 gap-4 mt-6">
+                    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-                        <div className="surface-positive rounded-2xl p-4">
-                            <p className="metric-title">Income</p>
+                        <div className="surface-positive min-w-0 rounded-2xl p-4">
+                            <p className="metric-title">{UI_TEXT.income}</p>
                             <h2 className="metric-value tone-positive">
                                 <CurrencyAmount
                                     amount={dashboard.income}
@@ -443,8 +473,8 @@ function App() {
                             </h2>
                         </div>
 
-                        <div className="surface-negative rounded-2xl p-4">
-                            <p className="metric-title">Expenses</p>
+                        <div className="surface-negative min-w-0 rounded-2xl p-4">
+                            <p className="metric-title">{UI_TEXT.expenses}</p>
                             <h2 className="metric-value tone-negative">
                                 <CurrencyAmount
                                     amount={dashboard.expenses}
@@ -460,12 +490,12 @@ function App() {
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
                     <h2 className="section-title mb-4">
-                        Paste Banking SMS
+                        {UI_TEXT.pasteBankingSms}
                     </h2>
 
                     <textarea
                         className="field-control h-32 rounded-2xl"
-                        placeholder="Paste your banking SMS here..."
+                        placeholder={UI_TEXT.pasteBankingSmsPlaceholder}
                         value={sms}
                         onChange={(e) => setSms(e.target.value)}
                     />
@@ -475,7 +505,7 @@ function App() {
                         disabled={loading}
                         className="action-button button-neutral mt-4"
                     >
-                        {loading ? 'Analyzing SMS...' : 'Analyze SMS'}
+                        {loading ? UI_TEXT.analyzingBankingSms : UI_TEXT.analyzeBankingSms}
                     </button>
 
                 </div>
@@ -484,11 +514,11 @@ function App() {
                     <div className="surface-card space-y-4 rounded-3xl p-6 transition-colors">
 
                         <h2 className="section-title">
-                            Parsed Transaction
+                            {UI_TEXT.reviewTransaction}
                         </h2>
 
                         <div>
-                            <label className="field-label">Type</label>
+                            <label className="field-label">{UI_TEXT.type}</label>
 
                             <select
                                 className="field-control mt-1"
@@ -504,7 +534,7 @@ function App() {
                         </div>
 
                         <div>
-                            <label className="field-label">Amount</label>
+                            <label className="field-label">{UI_TEXT.amount}</label>
 
                             <input
                                 type="number"
@@ -518,7 +548,7 @@ function App() {
                         </div>
 
                         <div>
-                            <label className="field-label">Merchant</label>
+                            <label className="field-label">{UI_TEXT.merchant}</label>
 
                             <input
                                 className="field-control mt-1"
@@ -532,7 +562,7 @@ function App() {
 
                         <div>
                             <label className="field-label">
-                                Category
+                                {UI_TEXT.category}
                             </label>
 
                             <select
@@ -559,7 +589,7 @@ function App() {
 
                         <div>
                             <label className="field-label">
-                                Transaction Date
+                                {UI_TEXT.transactionDate}
                             </label>
 
                             <input
@@ -582,7 +612,7 @@ function App() {
                             disabled={saving}
                             className="action-button button-success"
                         >
-                            {saving ? 'Saving Transaction...' : 'Save Transaction'}
+                            {saving ? UI_TEXT.savingTransaction : UI_TEXT.saveTransaction}
                         </button>
 
                     </div>
@@ -591,7 +621,7 @@ function App() {
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
                     <h2 className="section-title mb-4">
-                        Expense Categories
+                        {UI_TEXT.spendingByCategory}
                     </h2>
 
                     <div className="flex flex-col items-center gap-4">
@@ -645,12 +675,12 @@ function App() {
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
                     <h2 className="section-title mb-4">
-                        Reports
+                        {UI_TEXT.categoryReport}
                     </h2>
 
                     <div>
                         <label className="field-label">
-                            Category
+                            {UI_TEXT.category}
                         </label>
 
                         <select
@@ -658,7 +688,7 @@ function App() {
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         >
-                            <option value="ALL">All Categories</option>
+                            <option value="ALL">{UI_TEXT.allCategories}</option>
                             {REPORT_CATEGORIES.map(category => (
                                 <option
                                     key={category}
@@ -674,7 +704,7 @@ function App() {
                         <>
                             <div className="mt-4 grid grid-cols-2 gap-3">
                                 <div className="surface-positive rounded-2xl p-3">
-                                    <p className="text-subtle">Income</p>
+                                    <p className="text-subtle">{UI_TEXT.income}</p>
                                     <p className="report-metric-value tone-positive tabular-nums">
                                         <CurrencyAmount
                                             amount={reportSummary.income}
@@ -685,7 +715,7 @@ function App() {
                                 </div>
 
                                 <div className="surface-negative rounded-2xl p-3">
-                                    <p className="text-subtle">Expenses</p>
+                                    <p className="text-subtle">{UI_TEXT.expenses}</p>
                                     <p className="report-metric-value tone-negative tabular-nums">
                                         <CurrencyAmount
                                             amount={reportSummary.expenses}
@@ -697,7 +727,7 @@ function App() {
                             </div>
 
                             <div className="surface-subtle mt-3 rounded-2xl p-4">
-                                <p className="metric-title">Net</p>
+                                <p className="metric-title">{UI_TEXT.netBalance}</p>
                                 <p className={`summary-net-value tabular-nums ${remainingToneClass}`}>
                                     <CurrencyAmount
                                         amount={reportSummary.remaining}
@@ -709,7 +739,7 @@ function App() {
                     ) : (
                         <div className="mt-4 grid grid-cols-2 gap-3">
                             <div className="surface-negative rounded-2xl p-3">
-                                <p className="text-subtle">Expenses</p>
+                                <p className="text-subtle">{UI_TEXT.expenses}</p>
                                 <p className="report-metric-value tone-negative tabular-nums">
                                     <CurrencyAmount
                                         amount={reportSummary.expenses}
@@ -720,7 +750,7 @@ function App() {
                             </div>
 
                             <div className="surface-subtle rounded-2xl p-3">
-                                <p className="text-subtle">Transactions</p>
+                                <p className="text-subtle">{UI_TEXT.transactions}</p>
                                 <p className="report-metric-value tabular-nums">
                                     {reportTransactions.length.toLocaleString()}
                                 </p>
@@ -734,7 +764,7 @@ function App() {
 
                     <h2 className="section-title mb-4">
                         {selectedCategory === 'ALL'
-                            ? 'Recent Transactions'
+                            ? UI_TEXT.recentTransactions
                             : selectedCategory}
                     </h2>
 
@@ -784,8 +814,8 @@ function App() {
                                         className="delete-button"
                                     >
                                         {deletingTransactionId === transaction.id
-                                            ? 'Deleting...'
-                                            : 'Delete'}
+                                            ? UI_TEXT.deleting
+                                            : UI_TEXT.delete}
                                     </button>
                                 </div>
 
@@ -794,7 +824,7 @@ function App() {
 
                         {reportTransactions.length === 0 && (
                             <p className="text-muted py-6 text-center">
-                                No transactions found for this category.
+                                {UI_TEXT.noTransactionsForCategory}
                             </p>
                         )}
 
