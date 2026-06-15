@@ -20,8 +20,12 @@ const REPORT_CATEGORIES = CATEGORIES.filter(category => category !== 'Salary')
 const UI_TEXT = {
     availableBalance: 'Available Balance',
     reportingPeriod: 'Reporting Period',
+    monthInsight: 'Month Insight',
     income: 'Income',
     expenses: 'Expenses',
+    dailyPace: 'Daily Pace',
+    projectedSpend: 'Projected Spend',
+    confidence: 'Confidence',
     pasteBankingSms: 'Paste Banking SMS',
     pasteBankingSmsPlaceholder: 'Paste the banking SMS here...',
     analyzeBankingSms: 'Analyze Banking SMS',
@@ -38,6 +42,13 @@ const UI_TEXT = {
     categoryReport: 'Category Report',
     transactions: 'Transactions',
     recentTransactions: 'Recent Transactions',
+    summary: 'Summary',
+    changes: 'What Changed',
+    forecast: 'Forecast',
+    watchout: 'Watch Out',
+    loadingMonthInsight: 'Generating month insight...',
+    refreshingMonthInsight: 'Refreshing insight...',
+    monthInsightError: 'Could not generate the month insight.',
     deleting: 'Deleting...',
     delete: 'Delete',
     noTransactionsForCategory: 'No transactions found for the selected category.',
@@ -60,6 +71,14 @@ const normalizeCategory = (category, type) => {
 
 const formatType = (type) => {
     return type === 'INCOME' ? 'Income' : 'Expense'
+}
+
+const formatConfidence = (confidence) => {
+    if (!confidence) {
+        return 'Unknown'
+    }
+
+    return `${confidence.charAt(0)}${confidence.slice(1).toLowerCase()}`
 }
 
 const toAmount = (amount) => Number(amount) || 0
@@ -216,10 +235,17 @@ function App() {
 
     const [saving, setSaving] = useState(false)
 
+    const [monthInsight, setMonthInsight] = useState(null)
+
+    const [insightLoading, setInsightLoading] = useState(false)
+
+    const [insightError, setInsightError] = useState(false)
+
     const [deletingTransactionId, setDeletingTransactionId] = useState(null)
 
     useEffect(() => {
         loadTransactions(selectedMonth)
+        loadMonthInsight(selectedMonth)
     }, [selectedMonth])
 
     useEffect(() => {
@@ -258,6 +284,25 @@ function App() {
         setTransactions(sortTransactionsByDateDesc(
             response.data.filter(transaction => isTransactionInDateRange(transaction, dateRange)),
         ))
+    }
+
+    const loadMonthInsight = async (monthToLoad = selectedMonth) => {
+        const dateRange = getMonthDateRange(monthToLoad)
+
+        setInsightLoading(true)
+        setInsightError(false)
+
+        try {
+            const response = await api.get('/ai/month-insight', {
+                params: dateRange,
+            })
+
+            setMonthInsight(response.data)
+        } catch (e) {
+            setInsightError(true)
+        } finally {
+            setInsightLoading(false)
+        }
     }
 
     const parseSms = async () => {
@@ -483,6 +528,126 @@ function App() {
                         </div>
 
                     </div>
+                </div>
+
+                <div className="surface-card rounded-3xl p-6 transition-colors">
+
+                    <div className="flex items-start justify-between gap-3">
+                        <h2 className="section-title">
+                            {UI_TEXT.monthInsight}
+                        </h2>
+
+                        {insightLoading && monthInsight && (
+                            <p className="text-subtle">
+                                {UI_TEXT.refreshingMonthInsight}
+                            </p>
+                        )}
+                    </div>
+
+                    {!monthInsight && insightLoading && (
+                        <p className="text-muted mt-4">
+                            {UI_TEXT.loadingMonthInsight}
+                        </p>
+                    )}
+
+                    {insightError && !monthInsight && (
+                        <p className="text-muted mt-4">
+                            {UI_TEXT.monthInsightError}
+                        </p>
+                    )}
+
+                    {monthInsight && (
+                        <>
+                            <p className="text-body mt-4 font-medium">
+                                {monthInsight.headline}
+                            </p>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                <div className="surface-negative rounded-2xl p-3">
+                                    <p className="text-subtle">{UI_TEXT.expenses}</p>
+                                    <p className="report-metric-value tone-negative tabular-nums">
+                                        <CurrencyAmount
+                                            amount={monthInsight.expensesSoFar}
+                                            variant="compact"
+                                            valueClassName="tabular-nums"
+                                        />
+                                    </p>
+                                </div>
+
+                                <div className="surface-subtle rounded-2xl p-3">
+                                    <p className="text-subtle">{UI_TEXT.availableBalance}</p>
+                                    <p className="report-metric-value tabular-nums">
+                                        <CurrencyAmount
+                                            amount={monthInsight.remainingSoFar}
+                                            variant="compact"
+                                            valueClassName="tabular-nums"
+                                        />
+                                    </p>
+                                </div>
+
+                                <div className="surface-subtle rounded-2xl p-3">
+                                    <p className="text-subtle">{UI_TEXT.dailyPace}</p>
+                                    <p className="report-metric-value tabular-nums">
+                                        <CurrencyAmount
+                                            amount={monthInsight.dailyExpensePace}
+                                            variant="compact"
+                                            valueClassName="tabular-nums"
+                                        />
+                                    </p>
+                                </div>
+
+                                <div className="surface-subtle rounded-2xl p-3">
+                                    <p className="text-subtle">{UI_TEXT.projectedSpend}</p>
+                                    <p className="report-metric-value tabular-nums">
+                                        <CurrencyAmount
+                                            amount={monthInsight.projectedMonthEndExpenses}
+                                            variant="compact"
+                                            valueClassName="tabular-nums"
+                                        />
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-5 space-y-4">
+                                <div>
+                                    <p className="field-label">{UI_TEXT.summary}</p>
+                                    <p className="text-body mt-1">{monthInsight.summary}</p>
+                                </div>
+
+                                <div>
+                                    <p className="field-label">{UI_TEXT.changes}</p>
+                                    <p className="text-body mt-1">{monthInsight.changes}</p>
+                                </div>
+
+                                <div>
+                                    <p className="field-label">{UI_TEXT.forecast}</p>
+                                    <p className="text-body mt-1">{monthInsight.forecast}</p>
+                                </div>
+
+                                <div>
+                                    <p className="field-label">{UI_TEXT.watchout}</p>
+                                    <p className="text-body mt-1">{monthInsight.watchout}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-5 grid grid-cols-2 gap-3">
+                                <div className="surface-subtle rounded-2xl p-3">
+                                    <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
+                                    <p className="text-body mt-1">
+                                        {monthInsight.daysElapsed} / {monthInsight.totalDays} days
+                                    </p>
+                                </div>
+
+                                <div className="surface-subtle rounded-2xl p-3">
+                                    <p className="text-subtle">{UI_TEXT.confidence}</p>
+                                    <p className="report-metric-value">
+                                        {formatConfidence(monthInsight.confidence)}
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                 </div>
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
