@@ -43,7 +43,6 @@ const UI_TEXT = {
     allCategories: 'All Categories',
     transactions: 'Transactions',
     recentTransactions: 'Recent Transactions',
-    summary: 'Summary',
     changes: 'What Changed',
     forecast: 'Forecast',
     watchout: 'Watch Out',
@@ -1074,11 +1073,6 @@ function App() {
                                 </div>
 
                                 <div className="mt-5 space-y-4">
-                                    <div>
-                                        <p className="field-label">{UI_TEXT.summary}</p>
-                                        <p className="text-body mt-1">{monthInsight.summary}</p>
-                                    </div>
-
                                     <div>
                                         <p className="field-label">{UI_TEXT.changes}</p>
                                         <p className="text-body mt-1">{monthInsight.changes}</p>
