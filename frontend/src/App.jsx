@@ -717,74 +717,75 @@ function App() {
                         </div>
                     </div>
 
-                </div>
+                    <div
+                        className="mt-6 border-t pt-6"
+                        style={{borderColor: 'var(--app-border)'}}
+                    >
+                        <h3 className="section-title mb-4">
+                            {selectedCategory}
+                        </h3>
 
-                <div className="surface-card rounded-3xl p-6 transition-colors">
+                        <div className="recent-transactions-list space-y-3">
 
-                    <h2 className="section-title mb-4">
-                        {selectedCategory}
-                    </h2>
+                            {reportTransactions.map(transaction => (
 
-                    <div className="recent-transactions-list space-y-3">
+                                <div
+                                    key={transaction.id}
+                                    className="recent-transaction-item flex items-center justify-between gap-4 border-b pb-3"
+                                    style={{borderColor: 'var(--app-border)'}}
+                                >
 
-                        {reportTransactions.map(transaction => (
+                                    <div className="min-w-0">
+                                        <p className="text-body font-medium">
+                                            {transaction.merchant || transaction.category}
+                                        </p>
 
-                            <div
-                                key={transaction.id}
-                                className="recent-transaction-item flex items-center justify-between gap-4 border-b pb-3"
-                                style={{borderColor: 'var(--app-border)'}}
-                            >
+                                        <p className="text-muted">
+                                            {transaction.category}
+                                        </p>
 
-                                <div className="min-w-0">
-                                    <p className="text-body font-medium">
-                                        {transaction.merchant || transaction.category}
-                                    </p>
+                                        <p className="text-subtle mt-1">
+                                            {new Date(transaction.transactionDate)
+                                                .toLocaleString()}
+                                        </p>
+                                    </div>
 
-                                    <p className="text-muted">
-                                        {transaction.category}
-                                    </p>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-body font-semibold">
+                                            <CurrencyAmount
+                                                amount={transaction.amount}
+                                                className="justify-end"
+                                                currencyClassName="text-subtle"
+                                                valueClassName="tabular-nums"
+                                            />
+                                        </p>
 
-                                    <p className="text-subtle mt-1">
-                                        {new Date(transaction.transactionDate)
-                                            .toLocaleString()}
-                                    </p>
+                                        <p className="text-subtle">
+                                            {formatType(transaction.type)}
+                                        </p>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => deleteTransaction(transaction)}
+                                            disabled={deletingTransactionId === transaction.id}
+                                            className="delete-button"
+                                        >
+                                            {deletingTransactionId === transaction.id
+                                                ? UI_TEXT.deleting
+                                                : UI_TEXT.delete}
+                                        </button>
+                                    </div>
+
                                 </div>
+                            ))}
 
-                                <div className="text-right shrink-0">
-                                    <p className="text-body font-semibold">
-                                        <CurrencyAmount
-                                            amount={transaction.amount}
-                                            className="justify-end"
-                                            currencyClassName="text-subtle"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
+                            {reportTransactions.length === 0 && (
+                                <p className="text-muted py-6 text-center">
+                                    {UI_TEXT.noTransactionsForCategory}
+                                </p>
+                            )}
 
-                                    <p className="text-subtle">
-                                        {formatType(transaction.type)}
-                                    </p>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => deleteTransaction(transaction)}
-                                        disabled={deletingTransactionId === transaction.id}
-                                        className="delete-button"
-                                    >
-                                        {deletingTransactionId === transaction.id
-                                            ? UI_TEXT.deleting
-                                            : UI_TEXT.delete}
-                                    </button>
-                                </div>
-
-                            </div>
-                        ))}
-
-                        {reportTransactions.length === 0 && (
-                            <p className="text-muted py-6 text-center">
-                                {UI_TEXT.noTransactionsForCategory}
-                            </p>
-                        )}
-
+                        </div>
                     </div>
 
                 </div>
