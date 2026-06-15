@@ -36,7 +36,6 @@ const UI_TEXT = {
     savingTransaction: 'Saving Transaction...',
     spendingByCategory: 'Spending by Category',
     categoryReport: 'Category Report',
-    allCategories: 'All Categories',
     transactions: 'Transactions',
     recentTransactions: 'Recent Transactions',
     deleting: 'Deleting...',
@@ -207,7 +206,7 @@ function App() {
 
     const [selectedMonth, setSelectedMonth] = useState(getDefaultSelectedMonth)
 
-    const [selectedCategory, setSelectedCategory] = useState('ALL')
+    const [selectedCategory, setSelectedCategory] = useState(REPORT_CATEGORIES[0])
 
     const [sms, setSms] = useState('')
 
@@ -349,9 +348,9 @@ function App() {
 
     const dashboard = summarizeTransactions(transactions)
 
-    const reportTransactions = selectedCategory === 'ALL'
-        ? transactions
-        : transactions.filter(transaction => transaction.category === selectedCategory)
+    const reportTransactions = transactions.filter(
+        transaction => transaction.category === selectedCategory,
+    )
 
     const reportSummary = summarizeTransactions(reportTransactions)
 
@@ -459,28 +458,28 @@ function App() {
                         {UI_TEXT.reportingPeriod}: {formatDateRange(selectedDateRange)}
                     </p>
 
-                    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="mt-6 grid grid-cols-2 gap-3">
 
-                        <div className="surface-positive min-w-0 rounded-2xl p-4">
-                            <p className="metric-title">{UI_TEXT.income}</p>
-                            <h2 className="metric-value tone-positive">
+                        <div className="surface-positive min-w-0 rounded-2xl p-3">
+                            <p className="text-subtle">{UI_TEXT.income}</p>
+                            <p className="report-metric-value tone-positive tabular-nums">
                                 <CurrencyAmount
                                     amount={dashboard.income}
                                     variant="compact"
                                     valueClassName="tabular-nums"
                                 />
-                            </h2>
+                            </p>
                         </div>
 
-                        <div className="surface-negative min-w-0 rounded-2xl p-4">
-                            <p className="metric-title">{UI_TEXT.expenses}</p>
-                            <h2 className="metric-value tone-negative">
+                        <div className="surface-negative min-w-0 rounded-2xl p-3">
+                            <p className="text-subtle">{UI_TEXT.expenses}</p>
+                            <p className="report-metric-value tone-negative tabular-nums">
                                 <CurrencyAmount
                                     amount={dashboard.expenses}
                                     variant="compact"
                                     valueClassName="tabular-nums"
                                 />
-                            </h2>
+                            </p>
                         </div>
 
                     </div>
@@ -687,7 +686,6 @@ function App() {
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         >
-                            <option value="ALL">{UI_TEXT.allCategories}</option>
                             {REPORT_CATEGORIES.map(category => (
                                 <option
                                     key={category}
@@ -699,63 +697,32 @@ function App() {
                         </select>
                     </div>
 
-                    {selectedCategory === 'ALL' ? (
-                        <>
-                            <div className="mt-4 grid grid-cols-2 gap-3">
-                                <div className="surface-positive rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.income}</p>
-                                    <p className="report-metric-value tone-positive tabular-nums">
-                                        <CurrencyAmount
-                                            amount={reportSummary.income}
-                                            variant="compact"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
-                                </div>
-
-                                <div className="surface-negative rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.expenses}</p>
-                                    <p className="report-metric-value tone-negative tabular-nums">
-                                        <CurrencyAmount
-                                            amount={reportSummary.expenses}
-                                            variant="compact"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
-                                </div>
-                            </div>
-
-                        </>
-                    ) : (
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                            <div className="surface-negative rounded-2xl p-3">
-                                <p className="text-subtle">{UI_TEXT.expenses}</p>
-                                <p className="report-metric-value tone-negative tabular-nums">
-                                    <CurrencyAmount
-                                        amount={reportSummary.expenses}
-                                        variant="compact"
-                                        valueClassName="tabular-nums"
-                                    />
-                                </p>
-                            </div>
-
-                            <div className="surface-subtle rounded-2xl p-3">
-                                <p className="text-subtle">{UI_TEXT.transactions}</p>
-                                <p className="report-metric-value tabular-nums">
-                                    {reportTransactions.length.toLocaleString()}
-                                </p>
-                            </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="surface-negative rounded-2xl p-3">
+                            <p className="text-subtle">{UI_TEXT.expenses}</p>
+                            <p className="report-metric-value tone-negative tabular-nums">
+                                <CurrencyAmount
+                                    amount={reportSummary.expenses}
+                                    variant="compact"
+                                    valueClassName="tabular-nums"
+                                />
+                            </p>
                         </div>
-                    )}
+
+                        <div className="surface-subtle rounded-2xl p-3">
+                            <p className="text-subtle">{UI_TEXT.transactions}</p>
+                            <p className="report-metric-value tabular-nums">
+                                {reportTransactions.length.toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
 
                 </div>
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
                     <h2 className="section-title mb-4">
-                        {selectedCategory === 'ALL'
-                            ? UI_TEXT.recentTransactions
-                            : selectedCategory}
+                        {selectedCategory}
                     </h2>
 
                     <div className="recent-transactions-list space-y-3">
