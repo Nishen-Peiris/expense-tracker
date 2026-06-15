@@ -40,6 +40,7 @@ const UI_TEXT = {
     savingTransaction: 'Saving Transaction...',
     spendingByCategory: 'Spending by Category',
     categoryReport: 'Category Report',
+    allCategories: 'All Categories',
     transactions: 'Transactions',
     recentTransactions: 'Recent Transactions',
     summary: 'Summary',
@@ -225,7 +226,7 @@ function App() {
 
     const [selectedMonth, setSelectedMonth] = useState(getDefaultSelectedMonth)
 
-    const [selectedCategory, setSelectedCategory] = useState(REPORT_CATEGORIES[0])
+    const [selectedCategory, setSelectedCategory] = useState('ALL')
 
     const [sms, setSms] = useState('')
 
@@ -393,9 +394,9 @@ function App() {
 
     const dashboard = summarizeTransactions(transactions)
 
-    const reportTransactions = transactions.filter(
-        transaction => transaction.category === selectedCategory,
-    )
+    const reportTransactions = selectedCategory === 'ALL'
+        ? transactions
+        : transactions.filter(transaction => transaction.category === selectedCategory)
 
     const reportSummary = summarizeTransactions(reportTransactions)
 
@@ -851,6 +852,7 @@ function App() {
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         >
+                            <option value="ALL">{UI_TEXT.allCategories}</option>
                             {REPORT_CATEGORIES.map(category => (
                                 <option
                                     key={category}
@@ -887,7 +889,9 @@ function App() {
                         style={{borderColor: 'var(--app-border)'}}
                     >
                         <h3 className="section-title mb-4">
-                            {selectedCategory}
+                            {selectedCategory === 'ALL'
+                                ? UI_TEXT.recentTransactions
+                                : selectedCategory}
                         </h3>
 
                         <div className="recent-transactions-list space-y-3">
