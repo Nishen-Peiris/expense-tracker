@@ -50,6 +50,7 @@ const UI_TEXT = {
     loadingMonthInsight: 'Generating month insight...',
     refreshingMonthInsight: 'Refreshing insight...',
     monthInsightError: 'Could not generate the month insight.',
+    close: 'Close',
     deleting: 'Deleting...',
     delete: 'Delete',
     noTransactionsForCategory: 'No transactions found for the selected category.',
@@ -242,12 +243,23 @@ function App() {
 
     const [insightError, setInsightError] = useState(false)
 
+    const [isSmsModalOpen, setIsSmsModalOpen] = useState(false)
+
+    const [isInsightModalOpen, setIsInsightModalOpen] = useState(false)
+
     const [deletingTransactionId, setDeletingTransactionId] = useState(null)
 
     useEffect(() => {
         loadTransactions(selectedMonth)
-        loadMonthInsight(selectedMonth)
     }, [selectedMonth])
+
+    useEffect(() => {
+        if (!isInsightModalOpen) {
+            return
+        }
+
+        loadMonthInsight(selectedMonth)
+    }, [isInsightModalOpen, selectedMonth])
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -357,6 +369,7 @@ function App() {
 
             setParsedTransaction(null)
             setSms('')
+            setIsSmsModalOpen(false)
 
         } catch (e) {
             alert(UI_TEXT.saveTransactionError)
@@ -447,6 +460,51 @@ function App() {
             ? 'tone-negative'
             : 'tone-default'
 
+    const openSmsModal = () => {
+        setIsSmsModalOpen(true)
+    }
+
+    const tryPasteSmsFromClipboard = async () => {
+        if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
+            return
+        }
+
+        if (sms.trim() || parsedTransaction) {
+            return
+        }
+
+        try {
+            const clipboardText = await navigator.clipboard.readText()
+
+            if (clipboardText?.trim()) {
+                setSms((currentSms) => currentSms.trim() ? currentSms : clipboardText)
+            }
+        } catch (e) {
+            // Clipboard access is best-effort and may be blocked by the browser.
+        }
+    }
+
+    const openSmsModalWithClipboard = () => {
+        openSmsModal()
+        void tryPasteSmsFromClipboard()
+    }
+
+    const closeSmsModal = () => {
+        if (saving || loading) {
+            return
+        }
+
+        setIsSmsModalOpen(false)
+    }
+
+    const openInsightModal = () => {
+        setIsInsightModalOpen(true)
+    }
+
+    const closeInsightModal = () => {
+        setIsInsightModalOpen(false)
+    }
+
     return (
         <div className="app-shell p-4 transition-colors">
 
@@ -456,11 +514,13 @@ function App() {
                     <div className="flex items-start justify-between gap-3">
                         <p className="text-muted">{UI_TEXT.availableBalance}</p>
 
-                        <label className="relative block h-10 w-10 shrink-0">
-                            <span
-                                aria-label="Select month"
-                                title="Select month"
-                                className="surface-subtle text-muted flex h-10 w-10 items-center justify-center rounded-xl"
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={openSmsModalWithClipboard}
+                                aria-label={UI_TEXT.pasteBankingSms}
+                                title={UI_TEXT.pasteBankingSms}
+                                className="surface-subtle text-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                             >
                                 <svg
                                     aria-hidden="true"
@@ -472,25 +532,69 @@ function App() {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                 >
-                                    <path d="M8 2v4"/>
-                                    <path d="M16 2v4"/>
-                                    <path d="M3 10h18"/>
-                                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                    <path d="M12 5v14"/>
+                                    <path d="M5 12h14"/>
                                 </svg>
-                            </span>
+                            </button>
 
-                            <input
-                                type="month"
-                                aria-label="Month"
-                                className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
-                                value={selectedMonth}
-                                onChange={(e) => {
-                                    if (e.target.value) {
-                                        setSelectedMonth(e.target.value)
-                                    }
-                                }}
-                            />
-                        </label>
+                            <button
+                                type="button"
+                                onClick={openInsightModal}
+                                aria-label={UI_TEXT.monthInsight}
+                                title={UI_TEXT.monthInsight}
+                                className="surface-subtle text-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/>
+                                    <path d="M9 12l2 2 4-4"/>
+                                </svg>
+                            </button>
+
+                            <label className="relative block h-10 w-10 shrink-0">
+                                <span
+                                    aria-label="Select month"
+                                    title="Select month"
+                                    className="surface-subtle text-muted flex h-10 w-10 items-center justify-center rounded-xl"
+                                >
+                                    <svg
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M8 2v4"/>
+                                        <path d="M16 2v4"/>
+                                        <path d="M3 10h18"/>
+                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                    </svg>
+                                </span>
+
+                                <input
+                                    type="month"
+                                    aria-label="Month"
+                                    className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
+                                    value={selectedMonth}
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            setSelectedMonth(e.target.value)
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
                     </div>
 
                     <h1 className={`page-title mt-2 ${remainingToneClass}`}>
@@ -530,257 +634,6 @@ function App() {
 
                     </div>
                 </div>
-
-                <div className="surface-card rounded-3xl p-6 transition-colors">
-
-                    <div className="flex items-start justify-between gap-3">
-                        <h2 className="section-title">
-                            {UI_TEXT.monthInsight}
-                        </h2>
-
-                        {insightLoading && monthInsight && (
-                            <p className="text-subtle">
-                                {UI_TEXT.refreshingMonthInsight}
-                            </p>
-                        )}
-                    </div>
-
-                    {!monthInsight && insightLoading && (
-                        <p className="text-muted mt-4">
-                            {UI_TEXT.loadingMonthInsight}
-                        </p>
-                    )}
-
-                    {insightError && !monthInsight && (
-                        <p className="text-muted mt-4">
-                            {UI_TEXT.monthInsightError}
-                        </p>
-                    )}
-
-                    {monthInsight && (
-                        <>
-                            <p className="text-body mt-4 font-medium">
-                                {monthInsight.headline}
-                            </p>
-
-                            <div className="mt-4 grid grid-cols-2 gap-3">
-                                <div className="surface-negative rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.expenses}</p>
-                                    <p className="report-metric-value tone-negative tabular-nums">
-                                        <CurrencyAmount
-                                            amount={monthInsight.expensesSoFar}
-                                            variant="compact"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
-                                </div>
-
-                                <div className="surface-subtle rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.availableBalance}</p>
-                                    <p className="report-metric-value tabular-nums">
-                                        <CurrencyAmount
-                                            amount={monthInsight.remainingSoFar}
-                                            variant="compact"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
-                                </div>
-
-                                <div className="surface-subtle rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.dailyPace}</p>
-                                    <p className="report-metric-value tabular-nums">
-                                        <CurrencyAmount
-                                            amount={monthInsight.dailyExpensePace}
-                                            variant="compact"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
-                                </div>
-
-                                <div className="surface-subtle rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.projectedSpend}</p>
-                                    <p className="report-metric-value tabular-nums">
-                                        <CurrencyAmount
-                                            amount={monthInsight.projectedMonthEndExpenses}
-                                            variant="compact"
-                                            valueClassName="tabular-nums"
-                                        />
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 space-y-4">
-                                <div>
-                                    <p className="field-label">{UI_TEXT.summary}</p>
-                                    <p className="text-body mt-1">{monthInsight.summary}</p>
-                                </div>
-
-                                <div>
-                                    <p className="field-label">{UI_TEXT.changes}</p>
-                                    <p className="text-body mt-1">{monthInsight.changes}</p>
-                                </div>
-
-                                <div>
-                                    <p className="field-label">{UI_TEXT.forecast}</p>
-                                    <p className="text-body mt-1">{monthInsight.forecast}</p>
-                                </div>
-
-                                <div>
-                                    <p className="field-label">{UI_TEXT.watchout}</p>
-                                    <p className="text-body mt-1">{monthInsight.watchout}</p>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 grid grid-cols-2 gap-3">
-                                <div className="surface-subtle rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
-                                    <p className="text-body mt-1">
-                                        {monthInsight.daysElapsed} / {monthInsight.totalDays} days
-                                    </p>
-                                </div>
-
-                                <div className="surface-subtle rounded-2xl p-3">
-                                    <p className="text-subtle">{UI_TEXT.confidence}</p>
-                                    <p className="report-metric-value">
-                                        {formatConfidence(monthInsight.confidence)}
-                                    </p>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                </div>
-
-                <div className="surface-card rounded-3xl p-6 transition-colors">
-
-                    <h2 className="section-title mb-4">
-                        {UI_TEXT.pasteBankingSms}
-                    </h2>
-
-                    <textarea
-                        className="field-control h-32 rounded-2xl"
-                        placeholder={UI_TEXT.pasteBankingSmsPlaceholder}
-                        value={sms}
-                        onChange={(e) => setSms(e.target.value)}
-                    />
-
-                    <button
-                        onClick={parseSms}
-                        disabled={loading}
-                        className="action-button button-neutral mt-4"
-                    >
-                        {loading ? UI_TEXT.analyzingBankingSms : UI_TEXT.analyzeBankingSms}
-                    </button>
-
-                </div>
-
-                {parsedTransaction && (
-                    <div className="surface-card space-y-4 rounded-3xl p-6 transition-colors">
-
-                        <h2 className="section-title">
-                            {UI_TEXT.reviewTransaction}
-                        </h2>
-
-                        <div>
-                            <label className="field-label">{UI_TEXT.type}</label>
-
-                            <select
-                                className="field-control mt-1"
-                                value={parsedTransaction.type || ''}
-                                onChange={(e) => setParsedTransaction({
-                                    ...parsedTransaction,
-                                    type: e.target.value,
-                                })}
-                            >
-                                <option value="EXPENSE">Expense</option>
-                                <option value="INCOME">Income</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="field-label">{UI_TEXT.amount}</label>
-
-                            <input
-                                type="number"
-                                className="field-control mt-1"
-                                value={parsedTransaction.amount || ''}
-                                onChange={(e) => setParsedTransaction({
-                                    ...parsedTransaction,
-                                    amount: e.target.value,
-                                })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="field-label">{UI_TEXT.merchant}</label>
-
-                            <input
-                                className="field-control mt-1"
-                                value={parsedTransaction.merchant || ''}
-                                onChange={(e) => setParsedTransaction({
-                                    ...parsedTransaction,
-                                    merchant: e.target.value,
-                                })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="field-label">
-                                {UI_TEXT.category}
-                            </label>
-
-                            <select
-                                className="field-control mt-1"
-                                value={normalizeCategory(
-                                    parsedTransaction.category,
-                                    parsedTransaction.type,
-                                )}
-                                onChange={(e) => setParsedTransaction({
-                                    ...parsedTransaction,
-                                    category: e.target.value,
-                                })}
-                            >
-                                {CATEGORIES.map(category => (
-                                    <option
-                                        key={category}
-                                        value={category}
-                                    >
-                                        {category}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="field-label">
-                                {UI_TEXT.transactionDate}
-                            </label>
-
-                            <input
-                                type="datetime-local"
-                                className="field-control mt-1"
-                                value={
-                                    parsedTransaction.transactionDate
-                                        ? parsedTransaction.transactionDate.slice(0, 16)
-                                        : new Date().toISOString().slice(0, 16)
-                                }
-                                onChange={(e) => setParsedTransaction({
-                                    ...parsedTransaction,
-                                    transactionDate: e.target.value,
-                                })}
-                            />
-                        </div>
-
-                        <button
-                            onClick={saveTransaction}
-                            disabled={saving}
-                            className="action-button button-success"
-                        >
-                            {saving ? UI_TEXT.savingTransaction : UI_TEXT.saveTransaction}
-                        </button>
-
-                    </div>
-                )}
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
@@ -960,6 +813,308 @@ function App() {
                 </div>
 
             </div>
+
+            {isSmsModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-4 sm:items-center">
+                    <div className="surface-card max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl p-6 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                            <h2 className="section-title">
+                                {parsedTransaction ? UI_TEXT.reviewTransaction : UI_TEXT.pasteBankingSms}
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={closeSmsModal}
+                                aria-label={UI_TEXT.close}
+                                title={UI_TEXT.close}
+                                className="surface-subtle text-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M18 6L6 18"/>
+                                    <path d="M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {!parsedTransaction ? (
+                            <>
+                                <textarea
+                                    className="field-control mt-4 h-32 rounded-2xl"
+                                    placeholder={UI_TEXT.pasteBankingSmsPlaceholder}
+                                    value={sms}
+                                    onChange={(e) => setSms(e.target.value)}
+                                />
+
+                                <button
+                                    onClick={parseSms}
+                                    disabled={loading}
+                                    className="action-button button-neutral mt-4"
+                                >
+                                    {loading ? UI_TEXT.analyzingBankingSms : UI_TEXT.analyzeBankingSms}
+                                </button>
+                            </>
+                        ) : (
+                            <div className="mt-4 space-y-4">
+                                <div>
+                                    <label className="field-label">{UI_TEXT.type}</label>
+
+                                    <select
+                                        className="field-control mt-1"
+                                        value={parsedTransaction.type || ''}
+                                        onChange={(e) => setParsedTransaction({
+                                            ...parsedTransaction,
+                                            type: e.target.value,
+                                        })}
+                                    >
+                                        <option value="EXPENSE">Expense</option>
+                                        <option value="INCOME">Income</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="field-label">{UI_TEXT.amount}</label>
+
+                                    <input
+                                        type="number"
+                                        className="field-control mt-1"
+                                        value={parsedTransaction.amount || ''}
+                                        onChange={(e) => setParsedTransaction({
+                                            ...parsedTransaction,
+                                            amount: e.target.value,
+                                        })}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="field-label">{UI_TEXT.merchant}</label>
+
+                                    <input
+                                        className="field-control mt-1"
+                                        value={parsedTransaction.merchant || ''}
+                                        onChange={(e) => setParsedTransaction({
+                                            ...parsedTransaction,
+                                            merchant: e.target.value,
+                                        })}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="field-label">
+                                        {UI_TEXT.category}
+                                    </label>
+
+                                    <select
+                                        className="field-control mt-1"
+                                        value={normalizeCategory(
+                                            parsedTransaction.category,
+                                            parsedTransaction.type,
+                                        )}
+                                        onChange={(e) => setParsedTransaction({
+                                            ...parsedTransaction,
+                                            category: e.target.value,
+                                        })}
+                                    >
+                                        {CATEGORIES.map(category => (
+                                            <option
+                                                key={category}
+                                                value={category}
+                                            >
+                                                {category}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="field-label">
+                                        {UI_TEXT.transactionDate}
+                                    </label>
+
+                                    <input
+                                        type="datetime-local"
+                                        className="field-control mt-1"
+                                        value={
+                                            parsedTransaction.transactionDate
+                                                ? parsedTransaction.transactionDate.slice(0, 16)
+                                                : new Date().toISOString().slice(0, 16)
+                                        }
+                                        onChange={(e) => setParsedTransaction({
+                                            ...parsedTransaction,
+                                            transactionDate: e.target.value,
+                                        })}
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={saveTransaction}
+                                    disabled={saving}
+                                    className="action-button button-success"
+                                >
+                                    {saving ? UI_TEXT.savingTransaction : UI_TEXT.saveTransaction}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {isInsightModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-4 sm:items-center">
+                    <div className="surface-card max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl p-6 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <h2 className="section-title">
+                                    {UI_TEXT.monthInsight}
+                                </h2>
+                                <p className="text-muted mt-1">
+                                    {formatDateRange(selectedDateRange)}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={closeInsightModal}
+                                aria-label={UI_TEXT.close}
+                                title={UI_TEXT.close}
+                                className="surface-subtle text-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M18 6L6 18"/>
+                                    <path d="M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {!monthInsight && insightLoading && (
+                            <p className="text-muted mt-4">
+                                {UI_TEXT.loadingMonthInsight}
+                            </p>
+                        )}
+
+                        {insightError && !monthInsight && (
+                            <p className="text-muted mt-4">
+                                {UI_TEXT.monthInsightError}
+                            </p>
+                        )}
+
+                        {monthInsight && (
+                            <>
+                                {insightLoading && (
+                                    <p className="text-subtle mt-4">
+                                        {UI_TEXT.refreshingMonthInsight}
+                                    </p>
+                                )}
+
+                                <p className="text-body mt-4 font-medium">
+                                    {monthInsight.headline}
+                                </p>
+
+                                <div className="mt-4 grid grid-cols-2 gap-3">
+                                    <div className="surface-negative rounded-2xl p-3">
+                                        <p className="text-subtle">{UI_TEXT.expenses}</p>
+                                        <p className="report-metric-value tone-negative tabular-nums">
+                                            <CurrencyAmount
+                                                amount={monthInsight.expensesSoFar}
+                                                variant="compact"
+                                                valueClassName="tabular-nums"
+                                            />
+                                        </p>
+                                    </div>
+
+                                    <div className="surface-subtle rounded-2xl p-3">
+                                        <p className="text-subtle">{UI_TEXT.availableBalance}</p>
+                                        <p className="report-metric-value tabular-nums">
+                                            <CurrencyAmount
+                                                amount={monthInsight.remainingSoFar}
+                                                variant="compact"
+                                                valueClassName="tabular-nums"
+                                            />
+                                        </p>
+                                    </div>
+
+                                    <div className="surface-subtle rounded-2xl p-3">
+                                        <p className="text-subtle">{UI_TEXT.dailyPace}</p>
+                                        <p className="report-metric-value tabular-nums">
+                                            <CurrencyAmount
+                                                amount={monthInsight.dailyExpensePace}
+                                                variant="compact"
+                                                valueClassName="tabular-nums"
+                                            />
+                                        </p>
+                                    </div>
+
+                                    <div className="surface-subtle rounded-2xl p-3">
+                                        <p className="text-subtle">{UI_TEXT.projectedSpend}</p>
+                                        <p className="report-metric-value tabular-nums">
+                                            <CurrencyAmount
+                                                amount={monthInsight.projectedMonthEndExpenses}
+                                                variant="compact"
+                                                valueClassName="tabular-nums"
+                                            />
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-5 space-y-4">
+                                    <div>
+                                        <p className="field-label">{UI_TEXT.summary}</p>
+                                        <p className="text-body mt-1">{monthInsight.summary}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="field-label">{UI_TEXT.changes}</p>
+                                        <p className="text-body mt-1">{monthInsight.changes}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="field-label">{UI_TEXT.forecast}</p>
+                                        <p className="text-body mt-1">{monthInsight.forecast}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="field-label">{UI_TEXT.watchout}</p>
+                                        <p className="text-body mt-1">{monthInsight.watchout}</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-5 grid grid-cols-2 gap-3">
+                                    <div className="surface-subtle rounded-2xl p-3">
+                                        <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
+                                        <p className="text-body mt-1">
+                                            {monthInsight.daysElapsed} / {monthInsight.totalDays} days
+                                        </p>
+                                    </div>
+
+                                    <div className="surface-subtle rounded-2xl p-3">
+                                        <p className="text-subtle">{UI_TEXT.confidence}</p>
+                                        <p className="report-metric-value">
+                                            {formatConfidence(monthInsight.confidence)}
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
         </div>
     )
