@@ -20,9 +20,10 @@ spring:
       hibernate:
         format_sql: true
 
-ollama:
-  base-url: ${OLLAMA_BASE_URL:http://localhost:11434/v1}
-  model: ${OLLAMA_MODEL:llama3.1:8b}
+llm:
+  base-url: ${LLM_BASE_URL:${OPENAI_BASE_URL:https://api.openai.com/v1}}
+  model: ${LLM_MODEL:${OPENAI_MODEL:gpt-5.4-nano}}
+  api-key: ${OPENAI_API_KEY:}
 
 logging:
   level:

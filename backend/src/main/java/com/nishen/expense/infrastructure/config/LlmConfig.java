@@ -4,13 +4,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class OllamaConfig {
+public class LlmConfig {
 
-    @Value("${ollama.base-url}")
+    @Value("${llm.base-url}")
     private String baseUrl;
 
-    @Value("${ollama.model}")
+    @Value("${llm.model}")
     private String model;
+
+    @Value("${llm.api-key:}")
+    private String apiKey;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -18,5 +21,9 @@ public class OllamaConfig {
 
     public String getModel() {
         return model;
+    }
+
+    public String getApiKey() {
+        return apiKey;
     }
 }

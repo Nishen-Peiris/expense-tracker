@@ -4,18 +4,20 @@
 
 1. Copy `.env.example` to `.env`
 2. Fill in your existing MySQL server details
-3. Build and start the backend and Ollama:
+3. Set `OPENAI_API_KEY` in `.env`
+4. Build and start the backend:
 
 ```bash
 docker compose up -d --build
 ```
 
-The backend exposes port `8080` by default. Ollama is exposed on port `11434`.
+The backend exposes port `8080` by default.
 
-Default Ollama settings:
+Default LLM settings:
 
-- `OLLAMA_BASE_URL=http://localhost:11434/v1`
-- `OLLAMA_MODEL=llama3.1:8b`
+- `LLM_BASE_URL=https://api.openai.com/v1`
+- `LLM_MODEL=gpt-5.4-nano`
+- `OPENAI_API_KEY=<your OpenAI API key>`
 
 ## CasaOS
 
@@ -34,9 +36,10 @@ If your MySQL server is on another machine or NAS, set `DB_HOST` to that hostnam
 ## Run without Docker
 
 1. Export the same database environment variables from `.env`
-2. Start Ollama separately and make sure the configured model is pulled
-3. Export `OLLAMA_BASE_URL` if Ollama is not running on `http://localhost:11434/v1`
-4. Start Spring Boot:
+2. Export `OPENAI_API_KEY`
+3. Export `LLM_BASE_URL` if you are not using `https://api.openai.com/v1`
+4. Export `LLM_MODEL` if you want a model other than `gpt-5.4-nano`
+5. Start Spring Boot:
 
 ```bash
 mvn spring-boot:run

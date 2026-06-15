@@ -27,21 +27,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpClientErrorException.class)
     public ProblemDetail handleOpenAiClientError(HttpClientErrorException exception) {
-        log.warn("Ollama request failed status={}", exception.getStatusCode().value(), exception);
+        log.warn("LLM request failed status={}", exception.getStatusCode().value(), exception);
 
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
-        problemDetail.setTitle("Ollama request failed");
-        problemDetail.setDetail("Ollama returned HTTP " + exception.getStatusCode().value() + ". Check OLLAMA_BASE_URL and OLLAMA_MODEL.");
+        problemDetail.setTitle("LLM request failed");
+        problemDetail.setDetail("The model endpoint returned HTTP " + exception.getStatusCode().value() + ". Check LLM_BASE_URL, LLM_MODEL, and OPENAI_API_KEY.");
         return problemDetail;
     }
 
     @ExceptionHandler(RestClientException.class)
     public ProblemDetail handleOpenAiRequestFailure(RestClientException exception) {
-        log.warn("Ollama request failed", exception);
+        log.warn("LLM request failed", exception);
 
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
-        problemDetail.setTitle("Ollama request failed");
-        problemDetail.setDetail("The application could not complete the Ollama request.");
+        problemDetail.setTitle("LLM request failed");
+        problemDetail.setDetail("The application could not complete the model request.");
         return problemDetail;
     }
 

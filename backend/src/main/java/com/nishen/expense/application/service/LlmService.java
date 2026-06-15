@@ -5,7 +5,7 @@ import com.nishen.expense.api.dto.OpenAiRequest;
 import com.nishen.expense.api.dto.OpenAiResponse;
 import com.nishen.expense.api.dto.ParsedTransactionResponse;
 import com.nishen.expense.application.exception.OpenAiParseException;
-import com.nishen.expense.infrastructure.config.OllamaConfig;
+import com.nishen.expense.infrastructure.config.LlmConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -22,10 +22,10 @@ public class LlmService {
 
     private static final Logger log = LoggerFactory.getLogger(LlmService.class);
 
-    private final OllamaConfig config;
+    private final LlmConfig config;
     private final ObjectMapper objectMapper;
 
-    public LlmService(OllamaConfig config,
+    public LlmService(LlmConfig config,
                       ObjectMapper objectMapper) {
         this.config = config;
         this.objectMapper = objectMapper;
@@ -75,7 +75,7 @@ public class LlmService {
                 %s
                 """.formatted(sms);
 
-        log.info("Ollama SMS parse request prepared model={} smsLength={}",
+        log.info("LLM SMS parse request prepared model={} smsLength={}",
                 config.getModel(),
                 sms == null ? 0 : sms.length());
 
@@ -89,6 +89,9 @@ public class LlmService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        if (StringUtils.hasText(config.getApiKey())) {
+            headers.setBearerAuth(config.getApiKey());
+        }
 
         HttpEntity<OpenAiRequest> entity =
                 new HttpEntity<>(request, headers);
@@ -103,7 +106,7 @@ public class LlmService {
         );
         long durationMs = System.currentTimeMillis() - startedAt;
 
-        log.info("Ollama SMS parse response received model={} durationMs={}",
+        log.info("LLM SMS parse response received model={} durationMs={}",
                 config.getModel(),
                 durationMs);
 
@@ -111,10 +114,10 @@ public class LlmService {
                 response.getChoices() == null ||
                 response.getChoices().isEmpty()) {
 
-            log.warn("Ollama returned an empty response model={} durationMs={}",
+            log.warn("LLM returned an empty response model={} durationMs={}",
                     config.getModel(),
                     durationMs);
-            throw new OpenAiParseException("Ollama returned an empty response.");
+            throw new OpenAiParseException("LLM returned an empty response.");
         }
 
         String content =
@@ -129,24 +132,24 @@ public class LlmService {
                     ParsedTransactionResponse.class
             );
 
-            log.info("Ollama SMS parse response parsed type={} category={} merchantPresent={}",
+            log.info("LLM SMS parse response parsed type={} category={} merchantPresent={}",
                     parsedTransaction.getType(),
                     parsedTransaction.getCategory(),
                     parsedTransaction.getMerchant() != null && !parsedTransaction.getMerchant().isBlank());
 
             return parsedTransaction;
         } catch (Exception exception) {
-            log.warn("Ollama response could not be parsed as a transaction contentLength={}",
+            log.warn("LLM response could not be parsed as a transaction contentLength={}",
                     content == null ? 0 : content.length(),
                     exception);
-            throw new OpenAiParseException("Ollama response could not be parsed as a transaction.", exception);
+            throw new OpenAiParseException("LLM response could not be parsed as a transaction.", exception);
         }
     }
 
     private String normalizeJsonContent(String content) {
         if (content == null) {
-            log.warn("Ollama returned empty message content");
-            throw new OpenAiParseException("Ollama returned empty message content.");
+            log.warn("LLM returned empty message content");
+            throw new OpenAiParseException("LLM returned empty message content.");
         }
 
         String normalized = content.trim();
@@ -167,7 +170,7 @@ public class LlmService {
 
         String extractedJson = extractFirstJsonObject(normalized);
         if (extractedJson != null) {
-            log.warn("Ollama returned extra text around JSON contentLength={}", content.length());
+            log.warn("LLM returned extra text around JSON contentLength={}", content.length());
             return extractedJson;
         }
 
@@ -223,7 +226,7 @@ public class LlmService {
     private String resolveChatCompletionsUrl() {
         String baseUrl = config.getBaseUrl();
         if (!StringUtils.hasText(baseUrl)) {
-            throw new IllegalStateException("OLLAMA_BASE_URL is not configured.");
+            throw new IllegalStateException("LLM_BASE_URL is not configured.");
         }
 
         String normalizedBaseUrl = baseUrl.endsWith("/")
