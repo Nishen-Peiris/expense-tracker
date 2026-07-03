@@ -4,8 +4,10 @@ import com.nishen.expense.domain.Transaction;
 import com.nishen.expense.infrastructure.persistence.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -72,6 +74,36 @@ public class TransactionController {
         Transaction savedTransaction = repository.save(transaction);
 
         log.info("Transaction created id={} type={} category={} amountPresent={}",
+                savedTransaction.getId(),
+                savedTransaction.getType(),
+                savedTransaction.getCategory(),
+                savedTransaction.getAmount() != null);
+
+        return savedTransaction;
+    }
+
+    @PutMapping("/{id}")
+    public Transaction updateTransaction(@PathVariable Long id, @RequestBody Transaction transaction) {
+        log.info("Transaction update requested id={} type={} category={} amountPresent={}",
+                id,
+                transaction.getType(),
+                transaction.getCategory(),
+                transaction.getAmount() != null);
+
+        Transaction existingTransaction = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
+
+        existingTransaction.setType(transaction.getType());
+        existingTransaction.setAmount(transaction.getAmount());
+        existingTransaction.setMerchant(transaction.getMerchant());
+        existingTransaction.setCategory(transaction.getCategory());
+        existingTransaction.setDescription(transaction.getDescription());
+        existingTransaction.setTransactionDate(transaction.getTransactionDate());
+        existingTransaction.setRawSms(transaction.getRawSms());
+
+        Transaction savedTransaction = repository.save(existingTransaction);
+
+        log.info("Transaction updated id={} type={} category={} amountPresent={}",
                 savedTransaction.getId(),
                 savedTransaction.getType(),
                 savedTransaction.getCategory(),

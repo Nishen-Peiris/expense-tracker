@@ -318,7 +318,6 @@ html.dark body {
 }
 
 .delete-button {
-    margin-top: 0.5rem;
     display: inline-flex;
     border-radius: 0.5rem;
     padding: 0.25rem 0.5rem;
@@ -336,6 +335,28 @@ html.dark body {
 .delete-button:disabled {
     cursor: not-allowed;
     color: var(--app-text-subtle);
+}
+
+.transaction-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.edit-button {
+    display: inline-flex;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    color: #2563eb;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.edit-button:hover {
+    background: var(--app-surface-subtle);
 }
 
 .recent-transactions-list {

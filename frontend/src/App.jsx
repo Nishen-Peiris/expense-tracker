@@ -38,6 +38,10 @@ const UI_TEXT = {
     transactionDate: 'Transaction Date',
     saveTransaction: 'Save Transaction',
     savingTransaction: 'Saving Transaction...',
+    editTransaction: 'Edit Transaction',
+    edit: 'Edit',
+    updateTransaction: 'Update Transaction',
+    updatingTransaction: 'Updating Transaction...',
     spendingByCategory: 'Spending by Category',
     categoryReport: 'Category Report',
     allCategories: 'All Categories',
@@ -55,6 +59,7 @@ const UI_TEXT = {
     noTransactionsForCategory: 'No transactions found for the selected category.',
     parseSmsError: 'Could not analyze the banking SMS.',
     saveTransactionError: 'Could not save the transaction.',
+    updateTransactionError: 'Could not update the transaction.',
     deleteTransactionError: 'Could not delete the transaction.',
 }
 
@@ -83,6 +88,14 @@ const formatConfidence = (confidence) => {
 }
 
 const toAmount = (amount) => Number(amount) || 0
+
+const toTransactionFormState = (transaction) => ({
+    ...transaction,
+    category: normalizeCategory(transaction.category, transaction.type),
+    transactionDate: transaction.transactionDate
+        ? transaction.transactionDate.slice(0, 16)
+        : new Date().toISOString().slice(0, 16),
+})
 
 const padDatePart = (value) => String(value).padStart(2, '0')
 
@@ -232,6 +245,8 @@ function App() {
 
     const [parsedTransaction, setParsedTransaction] = useState(null)
 
+    const [editingTransaction, setEditingTransaction] = useState(null)
+
     const [loading, setLoading] = useState(false)
 
     const [saving, setSaving] = useState(false)
@@ -332,9 +347,8 @@ function App() {
             })
 
             setParsedTransaction({
-                ...response.data,
-                category: normalizeCategory(response.data.category, response.data.type),
-                transactionDate: new Date().toISOString(),
+                ...toTransactionFormState(response.data),
+                transactionDate: new Date().toISOString().slice(0, 16),
             })
 
         } catch (e) {
@@ -372,6 +386,38 @@ function App() {
 
         } catch (e) {
             alert(UI_TEXT.saveTransactionError)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const updateTransaction = async () => {
+
+        if (!editingTransaction?.id) {
+            return
+        }
+
+        const transactionToUpdate = {
+            ...editingTransaction,
+            amount: toAmount(editingTransaction.amount),
+            category: normalizeCategory(
+                editingTransaction.category,
+                editingTransaction.type,
+            ),
+        }
+
+        setSaving(true)
+
+        try {
+
+            await api.put(`/transactions/${editingTransaction.id}`, transactionToUpdate)
+            await loadTransactions()
+
+            setEditingTransaction(null)
+            setIsSmsModalOpen(false)
+
+        } catch (e) {
+            alert(UI_TEXT.updateTransactionError)
         } finally {
             setSaving(false)
         }
@@ -463,6 +509,12 @@ function App() {
         setIsSmsModalOpen(true)
     }
 
+    const openEditTransaction = (transaction) => {
+        setParsedTransaction(null)
+        setEditingTransaction(toTransactionFormState(transaction))
+        setIsSmsModalOpen(true)
+    }
+
     const tryPasteSmsFromClipboard = async () => {
         if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
             return
@@ -493,8 +545,13 @@ function App() {
             return
         }
 
+        setParsedTransaction(null)
+        setEditingTransaction(null)
         setIsSmsModalOpen(false)
     }
+
+    const transactionForm = parsedTransaction || editingTransaction
+    const isEditingTransaction = Boolean(editingTransaction)
 
     const openInsightModal = () => {
         setIsInsightModalOpen(true)
@@ -785,16 +842,26 @@ function App() {
                                             {formatType(transaction.type)}
                                         </p>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => deleteTransaction(transaction)}
-                                            disabled={deletingTransactionId === transaction.id}
-                                            className="delete-button"
-                                        >
-                                            {deletingTransactionId === transaction.id
-                                                ? UI_TEXT.deleting
-                                                : UI_TEXT.delete}
-                                        </button>
+                                        <div className="transaction-actions">
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditTransaction(transaction)}
+                                                className="edit-button"
+                                            >
+                                                {UI_TEXT.edit}
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => deleteTransaction(transaction)}
+                                                disabled={deletingTransactionId === transaction.id}
+                                                className="delete-button"
+                                            >
+                                                {deletingTransactionId === transaction.id
+                                                    ? UI_TEXT.deleting
+                                                    : UI_TEXT.delete}
+                                            </button>
+                                        </div>
                                     </div>
 
                                 </div>
@@ -818,7 +885,11 @@ function App() {
                     <div className="surface-card max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl p-6 transition-colors">
                         <div className="flex items-start justify-between gap-3">
                             <h2 className="section-title">
-                                {parsedTransaction ? UI_TEXT.reviewTransaction : UI_TEXT.pasteBankingSms}
+                                {transactionForm
+                                    ? isEditingTransaction
+                                        ? UI_TEXT.editTransaction
+                                        : UI_TEXT.reviewTransaction
+                                    : UI_TEXT.pasteBankingSms}
                             </h2>
 
                             <button
@@ -844,7 +915,7 @@ function App() {
                             </button>
                         </div>
 
-                        {!parsedTransaction ? (
+                        {!transactionForm ? (
                             <>
                                 <textarea
                                     className="field-control mt-4 h-32 rounded-2xl"
@@ -868,9 +939,9 @@ function App() {
 
                                     <select
                                         className="field-control mt-1"
-                                        value={parsedTransaction.type || ''}
-                                        onChange={(e) => setParsedTransaction({
-                                            ...parsedTransaction,
+                                        value={transactionForm.type || ''}
+                                        onChange={(e) => (isEditingTransaction ? setEditingTransaction : setParsedTransaction)({
+                                            ...transactionForm,
                                             type: e.target.value,
                                         })}
                                     >
@@ -885,9 +956,9 @@ function App() {
                                     <input
                                         type="number"
                                         className="field-control mt-1"
-                                        value={parsedTransaction.amount || ''}
-                                        onChange={(e) => setParsedTransaction({
-                                            ...parsedTransaction,
+                                        value={transactionForm.amount || ''}
+                                        onChange={(e) => (isEditingTransaction ? setEditingTransaction : setParsedTransaction)({
+                                            ...transactionForm,
                                             amount: e.target.value,
                                         })}
                                     />
@@ -898,9 +969,9 @@ function App() {
 
                                     <input
                                         className="field-control mt-1"
-                                        value={parsedTransaction.merchant || ''}
-                                        onChange={(e) => setParsedTransaction({
-                                            ...parsedTransaction,
+                                        value={transactionForm.merchant || ''}
+                                        onChange={(e) => (isEditingTransaction ? setEditingTransaction : setParsedTransaction)({
+                                            ...transactionForm,
                                             merchant: e.target.value,
                                         })}
                                     />
@@ -914,11 +985,11 @@ function App() {
                                     <select
                                         className="field-control mt-1"
                                         value={normalizeCategory(
-                                            parsedTransaction.category,
-                                            parsedTransaction.type,
+                                            transactionForm.category,
+                                            transactionForm.type,
                                         )}
-                                        onChange={(e) => setParsedTransaction({
-                                            ...parsedTransaction,
+                                        onChange={(e) => (isEditingTransaction ? setEditingTransaction : setParsedTransaction)({
+                                            ...transactionForm,
                                             category: e.target.value,
                                         })}
                                     >
@@ -942,23 +1013,29 @@ function App() {
                                         type="datetime-local"
                                         className="field-control mt-1"
                                         value={
-                                            parsedTransaction.transactionDate
-                                                ? parsedTransaction.transactionDate.slice(0, 16)
+                                            transactionForm.transactionDate
+                                                ? transactionForm.transactionDate.slice(0, 16)
                                                 : new Date().toISOString().slice(0, 16)
                                         }
-                                        onChange={(e) => setParsedTransaction({
-                                            ...parsedTransaction,
+                                        onChange={(e) => (isEditingTransaction ? setEditingTransaction : setParsedTransaction)({
+                                            ...transactionForm,
                                             transactionDate: e.target.value,
                                         })}
                                     />
                                 </div>
 
                                 <button
-                                    onClick={saveTransaction}
+                                    onClick={isEditingTransaction ? updateTransaction : saveTransaction}
                                     disabled={saving}
                                     className="action-button button-success"
                                 >
-                                    {saving ? UI_TEXT.savingTransaction : UI_TEXT.saveTransaction}
+                                    {saving
+                                        ? (isEditingTransaction
+                                            ? UI_TEXT.updatingTransaction
+                                            : UI_TEXT.savingTransaction)
+                                        : (isEditingTransaction
+                                            ? UI_TEXT.updateTransaction
+                                            : UI_TEXT.saveTransaction)}
                                 </button>
                             </div>
                         )}
