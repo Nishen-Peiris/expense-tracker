@@ -1,6 +1,18 @@
 import {useEffect, useState} from 'react'
 import api from './api'
-import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip,} from 'recharts'
+import {
+    CartesianGrid,
+    Cell,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts'
 
 const CATEGORIES = [
     'Salary',
@@ -66,6 +78,11 @@ const UI_TEXT = {
     noTransactionsHelp: 'Add a banking SMS to see your balance and spending breakdown.',
     addTransaction: 'Add transaction',
     noCategorySpending: 'No expense data to chart for this selection.',
+    expenseComparison: 'Expense Comparison',
+    currentPeriod: 'Current period',
+    previousPeriod: 'Previous period',
+    comparisonError: 'We could not load both reporting periods for comparison.',
+    noComparisonData: 'No expenses are available to compare across these periods.',
 }
 
 const defaultCategoryForType = (type) => {
@@ -144,6 +161,11 @@ const getMonthDateRange = (selectedMonth) => {
     }
 }
 
+const getPreviousMonthInputValue = (selectedMonth) => {
+    const [year, month] = selectedMonth.split('-').map(Number)
+    return formatMonthInputValue(new Date(year, month - 2, 1))
+}
+
 const formatDateRange = ({from, to}) => {
     const dateFormatter = new Intl.DateTimeFormat(undefined, {
         year: 'numeric',
@@ -195,6 +217,56 @@ const summarizeTransactions = (transactionsToSummarize) => {
         income: 0,
         expenses: 0,
         remaining: 0,
+    })
+}
+
+const buildExpenseComparison = (
+    currentTransactions,
+    previousTransactions,
+    currentRange,
+    previousRange,
+    today = new Date(),
+) => {
+    const parseDate = (value) => {
+        const [year, month, day] = value.split('-').map(Number)
+        return new Date(year, month - 1, day)
+    }
+    const currentStart = parseDate(currentRange.from)
+    const currentEnd = parseDate(currentRange.to)
+    const previousStart = parseDate(previousRange.from)
+    const previousEnd = parseDate(previousRange.to)
+    const dayMilliseconds = 24 * 60 * 60 * 1000
+    const totalDays = Math.round((currentEnd - currentStart) / dayMilliseconds) + 1
+    const currentCutoff = today < currentStart
+        ? -1
+        : Math.min(Math.floor((today - currentStart) / dayMilliseconds), totalDays - 1)
+
+    const expenseByDay = (items, startDate) => items.reduce((totals, transaction) => {
+        if (transaction.type !== 'EXPENSE') {
+            return totals
+        }
+
+        const transactionDate = new Date(transaction.transactionDate)
+        const dayIndex = Math.floor((transactionDate - startDate) / dayMilliseconds)
+        totals[dayIndex] = (totals[dayIndex] || 0) + toAmount(transaction.amount)
+        return totals
+    }, {})
+
+    const currentByDay = expenseByDay(currentTransactions, currentStart)
+    const previousByDay = expenseByDay(previousTransactions, previousStart)
+    const previousDays = Math.round((previousEnd - previousStart) / dayMilliseconds) + 1
+    let currentTotal = 0
+    let previousTotal = 0
+
+    return Array.from({length: Math.max(totalDays, previousDays)}, (_, dayIndex) => {
+        currentTotal += currentByDay[dayIndex] || 0
+        previousTotal += previousByDay[dayIndex] || 0
+
+        return {
+            day: dayIndex + 1,
+            current: dayIndex <= currentCutoff && dayIndex < totalDays ? currentTotal : null,
+            previous: dayIndex < previousDays ? previousTotal : null,
+        }
     })
 }
 
@@ -274,8 +346,15 @@ function App() {
 
     const [transactionsError, setTransactionsError] = useState(false)
 
+    const [previousTransactions, setPreviousTransactions] = useState([])
+
+    const [comparisonLoading, setComparisonLoading] = useState(true)
+
+    const [comparisonError, setComparisonError] = useState(false)
+
     useEffect(() => {
         loadTransactions(selectedMonth)
+        loadPreviousTransactions(selectedMonth)
     }, [selectedMonth])
 
     useEffect(() => {
@@ -311,6 +390,7 @@ function App() {
     }, [])
 
     const selectedDateRange = getMonthDateRange(selectedMonth)
+    const previousDateRange = getMonthDateRange(getPreviousMonthInputValue(selectedMonth))
 
     const loadTransactions = async (monthToLoad = selectedMonth) => {
         const dateRange = getMonthDateRange(monthToLoad)
@@ -331,6 +411,26 @@ function App() {
             setTransactionsError(true)
         } finally {
             setTransactionsLoading(false)
+        }
+    }
+
+    const loadPreviousTransactions = async (monthToLoad = selectedMonth) => {
+        const previousMonth = getPreviousMonthInputValue(monthToLoad)
+        const dateRange = getMonthDateRange(previousMonth)
+
+        setComparisonLoading(true)
+        setComparisonError(false)
+
+        try {
+            const response = await api.get('/transactions', {params: dateRange})
+            setPreviousTransactions(response.data.filter(transaction => (
+                isTransactionInDateRange(transaction, dateRange)
+            )))
+        } catch (e) {
+            setPreviousTransactions([])
+            setComparisonError(true)
+        } finally {
+            setComparisonLoading(false)
         }
     }
 
@@ -495,6 +595,16 @@ function App() {
         name: category,
         value: categoryTotals[category],
     }))
+
+    const expenseComparisonData = buildExpenseComparison(
+        transactions,
+        previousTransactions,
+        selectedDateRange,
+        previousDateRange,
+    )
+    const hasExpenseComparisonData = expenseComparisonData.some(day => (
+        (day.current || 0) > 0 || (day.previous || 0) > 0
+    ))
 
     const colors = [
         'var(--app-chart-1)',
@@ -819,6 +929,106 @@ function App() {
 
                 {activeView === 'overview' && (
                 <div className="surface-card overview-category-card rounded-3xl p-6 transition-colors">
+                    <section>
+                        <h2 className="section-title">{UI_TEXT.expenseComparison}</h2>
+
+                        {(comparisonLoading || transactionsLoading) && (
+                            <div className="empty-state mt-4" role="status">
+                                <p className="text-muted">Loading expense comparison...</p>
+                            </div>
+                        )}
+
+                        {!comparisonLoading && !transactionsLoading && (comparisonError || transactionsError) && (
+                            <div className="empty-state mt-4" role="alert">
+                                <p className="text-body font-medium">{UI_TEXT.comparisonError}</p>
+                                <button
+                                    type="button"
+                                    className="empty-state-action"
+                                    onClick={() => {
+                                        loadTransactions(selectedMonth)
+                                        loadPreviousTransactions(selectedMonth)
+                                    }}
+                                >
+                                    {UI_TEXT.retry}
+                                </button>
+                            </div>
+                        )}
+
+                        {!comparisonLoading
+                            && !transactionsLoading
+                            && !comparisonError
+                            && !transactionsError
+                            && hasExpenseComparisonData && (
+                            <div className="expense-comparison-chart mt-4">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={expenseComparisonData} margin={{top: 8, right: 8, left: -16, bottom: 0}}>
+                                        <CartesianGrid stroke="var(--app-border)" strokeDasharray="3 3"/>
+                                        <XAxis
+                                            dataKey="day"
+                                            tick={{fill: 'var(--app-text-subtle)', fontSize: 11}}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            label={{value: 'Reporting period day', position: 'insideBottom', offset: -2}}
+                                        />
+                                        <YAxis
+                                            tick={{fill: 'var(--app-text-subtle)', fontSize: 11}}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickFormatter={(value) => numberFormatter.format(value)}
+                                        />
+                                        <Tooltip
+                                            contentStyle={tooltipStyle}
+                                            formatter={(value, name) => [
+                                                `LKR ${formatLkrValue(value)}`,
+                                                name === 'current' ? UI_TEXT.currentPeriod : UI_TEXT.previousPeriod,
+                                            ]}
+                                            labelFormatter={(day) => `Reporting period day ${day}`}
+                                        />
+                                        <Legend
+                                            formatter={(value) => (
+                                                value === 'current' ? UI_TEXT.currentPeriod : UI_TEXT.previousPeriod
+                                            )}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="previous"
+                                            stroke="var(--app-text-subtle)"
+                                            strokeWidth={2}
+                                            dot={false}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="current"
+                                            stroke="var(--app-negative)"
+                                            strokeWidth={3}
+                                            dot={false}
+                                            connectNulls={false}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+
+                        {!comparisonLoading
+                            && !transactionsLoading
+                            && !comparisonError
+                            && !transactionsError
+                            && !hasExpenseComparisonData && (
+                            <div className="empty-state mt-4">
+                                <p className="text-body font-medium">{UI_TEXT.noComparisonData}</p>
+                                <p className="text-muted mt-1">{UI_TEXT.noTransactionsHelp}</p>
+                                <button
+                                    type="button"
+                                    className="empty-state-action"
+                                    onClick={openSmsModalWithClipboard}
+                                >
+                                    {UI_TEXT.addTransaction}
+                                </button>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="mt-6 border-t pt-6" style={{borderColor: 'var(--app-border)'}}>
                     <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
 
                     {transactionsLoading && (
@@ -885,6 +1095,7 @@ function App() {
                             </button>
                         </div>
                     )}
+                    </section>
                 </div>
                 )}
 

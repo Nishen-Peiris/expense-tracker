@@ -467,6 +467,10 @@ html.dark body {
     height: 13rem;
 }
 
+.expense-comparison-chart {
+    height: 16rem;
+}
+
 .category-legend {
     display: grid;
     width: 100%;
