@@ -103,6 +103,7 @@ html.dark body {
     min-height: 100vh;
     min-width: 0;
     overflow-x: hidden;
+    padding-bottom: 6rem;
     background: var(--app-bg);
     color: var(--app-text);
 }
@@ -466,6 +467,45 @@ html.dark body {
     gap: 0.5rem;
 }
 
+.app-navigation {
+    position: fixed;
+    z-index: 40;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 0.75rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--app-bg) 88%, transparent);
+    backdrop-filter: blur(14px);
+}
+
+.app-navigation-inner {
+    display: grid;
+    max-width: 36rem;
+    margin: 0 auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    background: var(--app-surface);
+    box-shadow: var(--app-shadow);
+}
+
+.app-navigation-item {
+    min-width: 0;
+    padding: 0.75rem 0.4rem;
+    color: var(--app-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.app-navigation-item.is-active {
+    background: var(--app-button);
+    color: var(--app-button-text);
+}
+
 @media (max-width: 360px) {
     .app-shell {
         padding: 0.5rem;
@@ -482,6 +522,11 @@ html.dark body {
 
     .category-legend {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-navigation-item {
+        padding-inline: 0.2rem;
+        font-size: 0.75rem;
     }
 
     .recent-transaction-item {

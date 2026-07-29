@@ -266,7 +266,7 @@ function App() {
 
     const [isSmsModalOpen, setIsSmsModalOpen] = useState(false)
 
-    const [isInsightModalOpen, setIsInsightModalOpen] = useState(false)
+    const [activeView, setActiveView] = useState('overview')
 
     const [deletingTransactionId, setDeletingTransactionId] = useState(null)
 
@@ -279,12 +279,12 @@ function App() {
     }, [selectedMonth])
 
     useEffect(() => {
-        if (!isInsightModalOpen) {
+        if (activeView !== 'insight') {
             return
         }
 
         loadMonthInsight(selectedMonth)
-    }, [isInsightModalOpen, selectedMonth])
+    }, [activeView, selectedMonth])
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -581,14 +581,6 @@ function App() {
     const transactionForm = parsedTransaction || editingTransaction
     const isEditingTransaction = Boolean(editingTransaction)
 
-    const openInsightModal = () => {
-        setIsInsightModalOpen(true)
-    }
-
-    const closeInsightModal = () => {
-        setIsInsightModalOpen(false)
-    }
-
     return (
         <div className="app-shell p-4 transition-colors">
 
@@ -618,28 +610,6 @@ function App() {
                                 >
                                     <path d="M12 5v14"/>
                                     <path d="M5 12h14"/>
-                                </svg>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={openInsightModal}
-                                aria-label={UI_TEXT.monthInsight}
-                                title={UI_TEXT.monthInsight}
-                                className="surface-subtle text-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                            >
-                                <svg
-                                    aria-hidden="true"
-                                    viewBox="0 0 24 24"
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/>
-                                    <path d="M9 12l2 2 4-4"/>
                                 </svg>
                             </button>
 
@@ -732,6 +702,7 @@ function App() {
                     </div>
                 </div>
 
+                {activeView === 'transactions' && (
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
                     <h2 className="section-title">{UI_TEXT.transactions}</h2>
@@ -842,9 +813,30 @@ function App() {
                     )}
 
                 </div>
+                )}
 
+                {activeView === 'overview' && (
                 <div className="surface-card rounded-3xl p-6 transition-colors">
                     <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
+
+                    {transactionsLoading && (
+                        <div className="empty-state mt-4" role="status">
+                            <p className="text-muted">{UI_TEXT.loadingTransactions}</p>
+                        </div>
+                    )}
+
+                    {!transactionsLoading && transactionsError && (
+                        <div className="empty-state mt-4" role="alert">
+                            <p className="text-body font-medium">{UI_TEXT.transactionsError}</p>
+                            <button
+                                type="button"
+                                className="empty-state-action"
+                                onClick={() => loadTransactions(selectedMonth)}
+                            >
+                                {UI_TEXT.retry}
+                            </button>
+                        </div>
+                    )}
 
                     {!transactionsLoading && !transactionsError && chartData.length > 0 ? (
                         <div className="mt-4 flex flex-col items-center gap-4">
@@ -892,6 +884,7 @@ function App() {
                         </div>
                     )}
                 </div>
+                )}
 
             </div>
 
@@ -1058,10 +1051,10 @@ function App() {
                 </div>
             )}
 
-            {isInsightModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-4 sm:items-center">
-                    <div className="surface-card max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl p-6 transition-colors">
-                        <div className="flex items-start justify-between gap-3">
+            {activeView === 'insight' && (
+                <div className="mx-auto mt-4 max-w-xl">
+                    <div className="surface-card w-full rounded-3xl p-6 transition-colors">
+                        <div>
                             <div>
                                 <h2 className="section-title">
                                     {UI_TEXT.monthInsight}
@@ -1070,28 +1063,6 @@ function App() {
                                     {formatDateRange(selectedDateRange)}
                                 </p>
                             </div>
-
-                            <button
-                                type="button"
-                                onClick={closeInsightModal}
-                                aria-label={UI_TEXT.close}
-                                title={UI_TEXT.close}
-                                className="surface-subtle text-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                            >
-                                <svg
-                                    aria-hidden="true"
-                                    viewBox="0 0 24 24"
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <path d="M18 6L6 18"/>
-                                    <path d="M6 6l12 12"/>
-                                </svg>
-                            </button>
                         </div>
 
                         {!monthInsight && insightLoading && (
@@ -1101,9 +1072,16 @@ function App() {
                         )}
 
                         {insightError && !monthInsight && (
-                            <p className="text-muted mt-4">
-                                {UI_TEXT.monthInsightError}
-                            </p>
+                            <div className="empty-state mt-4" role="alert">
+                                <p className="text-body font-medium">{UI_TEXT.monthInsightError}</p>
+                                <button
+                                    type="button"
+                                    className="empty-state-action"
+                                    onClick={() => loadMonthInsight(selectedMonth)}
+                                >
+                                    {UI_TEXT.retry}
+                                </button>
+                            </div>
                         )}
 
                         {monthInsight && (
@@ -1201,6 +1179,26 @@ function App() {
                     </div>
                 </div>
             )}
+
+            <nav className="app-navigation" aria-label="Primary navigation">
+                <div className="app-navigation-inner">
+                    {[
+                        ['overview', 'Overview'],
+                        ['transactions', UI_TEXT.transactions],
+                        ['insight', UI_TEXT.monthInsight],
+                    ].map(([view, label]) => (
+                        <button
+                            key={view}
+                            type="button"
+                            className={`app-navigation-item ${activeView === view ? 'is-active' : ''}`.trim()}
+                            aria-current={activeView === view ? 'page' : undefined}
+                            onClick={() => setActiveView(view)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </nav>
 
         </div>
     )
