@@ -81,6 +81,7 @@ const UI_TEXT = {
     previousPeriod: 'Previous period',
     comparisonError: 'We could not load both reporting periods for comparison.',
     noComparisonData: 'No expenses are available to compare across these periods.',
+    periodProgress: 'Period Progress',
 }
 
 const defaultCategoryForType = (type) => {
@@ -164,20 +165,46 @@ const getPreviousMonthInputValue = (selectedMonth) => {
     return formatMonthInputValue(new Date(year, month - 2, 1))
 }
 
+const parseDateInputValue = (value) => {
+    const [year, month, day] = value.split('-').map(Number)
+    return new Date(year, month - 1, day)
+}
+
+const toLocalDayNumber = (date) => Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+)
+
 const formatDateRange = ({from, to}) => {
-    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+    const dateFormatter = new Intl.DateTimeFormat('en-LK', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
     })
 
-    const parseDateInputValue = (value) => {
-        const [year, month, day] = value.split('-').map(Number)
+    return `${dateFormatter.format(parseDateInputValue(from))} – ${dateFormatter.format(parseDateInputValue(to))}`
+}
 
-        return new Date(year, month - 1, day)
+const getReportingPeriodProgress = ({from, to}, today = new Date()) => {
+    const startDate = parseDateInputValue(from)
+    const endDate = parseDateInputValue(to)
+    const dayMilliseconds = 24 * 60 * 60 * 1000
+    const startDay = toLocalDayNumber(startDate)
+    const endDay = toLocalDayNumber(endDate)
+    const todayDay = toLocalDayNumber(today)
+    const totalDays = Math.round((endDay - startDay) / dayMilliseconds) + 1
+    const elapsedDays = todayDay < startDay
+        ? 0
+        : todayDay > endDay
+            ? totalDays
+            : Math.floor((todayDay - startDay) / dayMilliseconds) + 1
+
+    return {
+        elapsedDays,
+        totalDays,
+        percentage: Math.round((elapsedDays / totalDays) * 100),
     }
-
-    return `${dateFormatter.format(parseDateInputValue(from))} - ${dateFormatter.format(parseDateInputValue(to))}`
 }
 
 const isTransactionInDateRange = (transaction, {from, to}) => {
@@ -225,34 +252,37 @@ const buildExpenseComparison = (
     previousRange,
     today = new Date(),
 ) => {
-    const parseDate = (value) => {
-        const [year, month, day] = value.split('-').map(Number)
-        return new Date(year, month - 1, day)
-    }
-    const currentStart = parseDate(currentRange.from)
-    const currentEnd = parseDate(currentRange.to)
-    const previousStart = parseDate(previousRange.from)
-    const previousEnd = parseDate(previousRange.to)
+    const currentStart = parseDateInputValue(currentRange.from)
+    const currentEnd = parseDateInputValue(currentRange.to)
+    const previousStart = parseDateInputValue(previousRange.from)
+    const previousEnd = parseDateInputValue(previousRange.to)
     const dayMilliseconds = 24 * 60 * 60 * 1000
-    const totalDays = Math.round((currentEnd - currentStart) / dayMilliseconds) + 1
-    const currentCutoff = today < currentStart
+    const currentStartDay = toLocalDayNumber(currentStart)
+    const currentEndDay = toLocalDayNumber(currentEnd)
+    const previousStartDay = toLocalDayNumber(previousStart)
+    const previousEndDay = toLocalDayNumber(previousEnd)
+    const todayDay = toLocalDayNumber(today)
+    const totalDays = Math.round((currentEndDay - currentStartDay) / dayMilliseconds) + 1
+    const currentCutoff = todayDay < currentStartDay
         ? -1
-        : Math.min(Math.floor((today - currentStart) / dayMilliseconds), totalDays - 1)
+        : Math.min(Math.floor((todayDay - currentStartDay) / dayMilliseconds), totalDays - 1)
 
-    const expenseByDay = (items, startDate) => items.reduce((totals, transaction) => {
+    const expenseByDay = (items, startDay) => items.reduce((totals, transaction) => {
         if (transaction.type !== 'EXPENSE') {
             return totals
         }
 
         const transactionDate = new Date(transaction.transactionDate)
-        const dayIndex = Math.floor((transactionDate - startDate) / dayMilliseconds)
+        const dayIndex = Math.floor(
+            (toLocalDayNumber(transactionDate) - startDay) / dayMilliseconds,
+        )
         totals[dayIndex] = (totals[dayIndex] || 0) + toAmount(transaction.amount)
         return totals
     }, {})
 
-    const currentByDay = expenseByDay(currentTransactions, currentStart)
-    const previousByDay = expenseByDay(previousTransactions, previousStart)
-    const previousDays = Math.round((previousEnd - previousStart) / dayMilliseconds) + 1
+    const currentByDay = expenseByDay(currentTransactions, currentStartDay)
+    const previousByDay = expenseByDay(previousTransactions, previousStartDay)
+    const previousDays = Math.round((previousEndDay - previousStartDay) / dayMilliseconds) + 1
     let currentTotal = 0
     let previousTotal = 0
 
@@ -620,13 +650,11 @@ function App() {
         'var(--app-chart-9)',
     ]
 
-    const isDarkMode = getStoredTheme() === 'dark'
-
     const tooltipStyle = {
-        backgroundColor: isDarkMode ? '#0f172a' : '#ffffff',
-        borderColor: isDarkMode ? '#334155' : '#dbe2ea',
+        backgroundColor: 'var(--app-surface)',
+        borderColor: 'var(--app-border-strong)',
         borderRadius: '16px',
-        color: isDarkMode ? '#e2e8f0' : '#0f172a',
+        color: 'var(--app-text)',
         fontSize: '14px',
     }
 
@@ -646,6 +674,17 @@ function App() {
     const cashFlowScale = Math.max(dashboard.income, dashboard.expenses, 1)
     const cashFlowExpenseWidth = (dashboard.expenses / cashFlowScale) * 100
     const cashFlowIncomeMarker = (dashboard.income / cashFlowScale) * 100
+    const reportingPeriodProgress = getReportingPeriodProgress(selectedDateRange)
+    const paceDifference = spentPercentage - reportingPeriodProgress.percentage
+    const paceMessage = dashboard.income <= 0
+        ? 'Record income to compare spending pace with time elapsed.'
+        : reportingPeriodProgress.elapsedDays === 0
+            ? 'This reporting period has not started yet.'
+            : Math.abs(paceDifference) <= 5
+                ? 'Spending and time elapsed are closely aligned.'
+                : paceDifference > 0
+                    ? `Spending is ${numberFormatter.format(paceDifference)} percentage points ahead of time.`
+                    : `Spending is ${numberFormatter.format(Math.abs(paceDifference))} percentage points behind time.`
 
     const finishChartSwipe = (touchEnd) => {
         if (chartTouchStart === null) {
@@ -1060,7 +1099,7 @@ function App() {
                                         </Pie>
                                         <Tooltip
                                             contentStyle={tooltipStyle}
-                                            itemStyle={{color: isDarkMode ? '#e2e8f0' : '#0f172a'}}
+                                            itemStyle={{color: 'var(--app-text)'}}
                                             formatter={(value) => [`LKR ${formatLkrValue(value)}`, 'Amount']}
                                         />
                                     </PieChart>
@@ -1134,6 +1173,39 @@ function App() {
                                         ? 'Expenses recorded with no income in this period'
                                         : 'Add income and expenses to see your cash flow'}
                             </p>
+
+                            <div className="period-progress">
+                                <div className="period-progress-heading">
+                                    <span className="text-body">{UI_TEXT.periodProgress}</span>
+                                    <span className="text-subtle tabular-nums">
+                                        Day {numberFormatter.format(reportingPeriodProgress.elapsedDays)}
+                                        {' '}of {numberFormatter.format(reportingPeriodProgress.totalDays)}
+                                    </span>
+                                </div>
+                                <div
+                                    className="period-progress-track"
+                                    role="progressbar"
+                                    aria-label="Reporting period elapsed"
+                                    aria-valuemin="0"
+                                    aria-valuemax={reportingPeriodProgress.totalDays}
+                                    aria-valuenow={reportingPeriodProgress.elapsedDays}
+                                    aria-valuetext={
+                                        `${reportingPeriodProgress.elapsedDays} of ${reportingPeriodProgress.totalDays} days elapsed`
+                                    }
+                                >
+                                    <span
+                                        className="period-progress-fill"
+                                        style={{width: `${reportingPeriodProgress.percentage}%`}}
+                                    />
+                                </div>
+                                <p className={`cash-flow-chart-caption ${
+                                    paceDifference > 5 && dashboard.income > 0
+                                        ? 'tone-negative'
+                                        : 'text-muted'
+                                }`}>
+                                    {paceMessage}
+                                </p>
+                            </div>
 
                             <div className="cash-flow-metrics">
                                 <div className="cash-flow-metric-item">

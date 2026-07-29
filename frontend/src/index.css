@@ -261,6 +261,34 @@ html.dark body {
     line-height: 1rem;
 }
 
+.period-progress {
+    margin-top: 1.75rem;
+}
+
+.period-progress-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.period-progress-track {
+    height: 1rem;
+    margin-top: 0.625rem;
+    overflow: hidden;
+    border: 1px solid var(--app-positive-border);
+    border-radius: 9999px;
+    background: var(--app-positive-surface);
+}
+
+.period-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--app-chart-2);
+    transition: width 300ms ease;
+}
+
 .cash-flow-metrics {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -531,6 +559,8 @@ html.dark body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .cash-flow-bullet-fill,
+    .period-progress-fill,
     .chart-carousel-track {
         transition: none;
     }
