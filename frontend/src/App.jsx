@@ -2,7 +2,6 @@ import {useEffect, useState} from 'react'
 import api from './api'
 import {
     Cell,
-    Legend,
     Line,
     LineChart,
     Pie,
@@ -1006,41 +1005,54 @@ function App() {
                             && !comparisonError
                             && !transactionsError
                             && hasExpenseComparisonData && (
-                            <div className="expense-comparison-chart mt-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={expenseComparisonData} margin={{top: 12, right: 12, left: 12, bottom: 8}}>
-                                        <Tooltip
-                                            contentStyle={tooltipStyle}
-                                            formatter={(value, name) => [
-                                                `LKR ${formatLkrValue(value)}`,
-                                                name === 'current' ? UI_TEXT.currentPeriod : UI_TEXT.previousPeriod,
-                                            ]}
-                                            labelFormatter={(day) => `Reporting period day ${day}`}
+                            <div className="mt-4">
+                                <div className="expense-comparison-chart">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={expenseComparisonData} margin={{top: 12, right: 12, left: 12, bottom: 8}}>
+                                            <Tooltip
+                                                contentStyle={tooltipStyle}
+                                                formatter={(value, name) => [
+                                                    `LKR ${formatLkrValue(value)}`,
+                                                    name === 'current' ? UI_TEXT.currentPeriod : UI_TEXT.previousPeriod,
+                                                ]}
+                                                labelFormatter={(day) => `Reporting period day ${day}`}
+                                            />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="previous"
+                                                stroke="var(--app-chart-2)"
+                                                strokeWidth={3}
+                                                dot={false}
+                                                activeDot={{r: 5, strokeWidth: 0}}
+                                            />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="current"
+                                                stroke="var(--app-chart-1)"
+                                                strokeWidth={3}
+                                                dot={false}
+                                                activeDot={{r: 5, strokeWidth: 0}}
+                                                connectNulls={false}
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="category-legend comparison-legend">
+                                    <div className="category-legend-item">
+                                        <span
+                                            className="h-3 w-3 shrink-0 rounded-full"
+                                            style={{backgroundColor: 'var(--app-chart-2)'}}
                                         />
-                                        <Legend
-                                            formatter={(value) => (
-                                                value === 'current' ? UI_TEXT.currentPeriod : UI_TEXT.previousPeriod
-                                            )}
+                                        <span className="text-body">{UI_TEXT.previousPeriod}</span>
+                                    </div>
+                                    <div className="category-legend-item">
+                                        <span
+                                            className="h-3 w-3 shrink-0 rounded-full"
+                                            style={{backgroundColor: 'var(--app-chart-1)'}}
                                         />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="previous"
-                                            stroke="var(--app-chart-2)"
-                                            strokeWidth={3}
-                                            dot={false}
-                                            activeDot={{r: 5, strokeWidth: 0}}
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="current"
-                                            stroke="var(--app-chart-1)"
-                                            strokeWidth={3}
-                                            dot={false}
-                                            activeDot={{r: 5, strokeWidth: 0}}
-                                            connectNulls={false}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                                        <span className="text-body">{UI_TEXT.currentPeriod}</span>
+                                    </div>
+                                </div>
                             </div>
                         )}
 

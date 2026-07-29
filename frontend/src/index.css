@@ -152,7 +152,7 @@ html.dark body {
 
 .transactions-card {
     display: flex;
-    height: 100%;
+    height: calc(100% - 0.75rem);
     min-height: 0 !important;
     flex: 1 1 auto;
     flex-direction: column;
@@ -408,8 +408,8 @@ html.dark body {
 }
 
 select.field-control {
-    height: 3.25rem;
-    min-height: 3.25rem;
+    height: 2.875rem;
+    min-height: 2.875rem;
     padding-top: 0;
     padding-bottom: 0;
     line-height: normal;
@@ -608,6 +608,10 @@ select.field-control {
 
 .expense-comparison-chart {
     height: 16rem;
+}
+
+.comparison-legend {
+    margin-top: 0.75rem;
 }
 
 .chart-carousel {
