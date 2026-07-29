@@ -2,51 +2,59 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 html {
-    background: #f8fafc;
+    background: #f2f2f7;
     font-size: 16px;
 }
 
 :root {
     color-scheme: light;
-    --app-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --app-bg: #f8fafc;
-    --app-surface: #ffffff;
-    --app-surface-subtle: #f1f5f9;
-    --app-surface-accent: #eff6ff;
-    --app-surface-danger: #fef2f2;
-    --app-border: #dbe2ea;
-    --app-border-strong: #cbd5e1;
-    --app-text: #0f172a;
-    --app-text-muted: #475569;
-    --app-text-subtle: #64748b;
-    --app-positive: #15803d;
-    --app-positive-surface: #f0fdf4;
-    --app-positive-border: #bbf7d0;
-    --app-negative: #b91c1c;
-    --app-negative-surface: #fef2f2;
-    --app-negative-border: #fecaca;
-    --app-button: #1e293b;
-    --app-button-hover: #334155;
+    --app-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    --app-bg: #f2f2f7;
+    --app-surface: rgba(255, 255, 255, 0.68);
+    --app-surface-subtle: rgba(255, 255, 255, 0.46);
+    --app-surface-accent: rgba(0, 122, 255, 0.1);
+    --app-surface-danger: rgba(255, 59, 48, 0.1);
+    --app-border: rgba(255, 255, 255, 0.76);
+    --app-border-strong: rgba(60, 60, 67, 0.22);
+    --app-text: #1c1c1e;
+    --app-text-muted: rgba(60, 60, 67, 0.82);
+    --app-text-subtle: rgba(60, 60, 67, 0.62);
+    --app-positive: #248a3d;
+    --app-positive-surface: rgba(52, 199, 89, 0.12);
+    --app-positive-border: rgba(52, 199, 89, 0.28);
+    --app-negative: #d70015;
+    --app-negative-surface: rgba(255, 59, 48, 0.11);
+    --app-negative-border: rgba(255, 59, 48, 0.28);
+    --app-button: #007aff;
+    --app-button-hover: #0066d6;
     --app-button-text: #ffffff;
-    --app-button-disabled: #cbd5e1;
-    --app-button-disabled-text: #64748b;
-    --app-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.1);
-    --app-chart-1: #2563eb;
-    --app-chart-2: #059669;
-    --app-chart-3: #d97706;
-    --app-chart-4: #dc2626;
-    --app-chart-5: #7c3aed;
-    --app-chart-6: #0891b2;
-    --app-chart-7: #be185d;
-    --app-chart-8: #65a30d;
-    --app-chart-9: #ea580c;
+    --app-button-disabled: rgba(120, 120, 128, 0.18);
+    --app-button-disabled-text: rgba(60, 60, 67, 0.48);
+    --app-shadow:
+        0 18px 50px rgba(31, 38, 52, 0.12),
+        0 2px 8px rgba(31, 38, 52, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.74);
+    --app-chart-1: #007aff;
+    --app-chart-2: #34c759;
+    --app-chart-3: #ff9500;
+    --app-chart-4: #ff3b30;
+    --app-chart-5: #af52de;
+    --app-chart-6: #5ac8fa;
+    --app-chart-7: #ff2d55;
+    --app-chart-8: #30b0c7;
+    --app-chart-9: #5856d6;
 }
 
 body {
     margin: 0;
     min-width: 0;
     font-family: var(--app-font-sans);
-    background: var(--app-bg);
+    background:
+        radial-gradient(circle at 12% 8%, rgba(90, 200, 250, 0.34), transparent 34rem),
+        radial-gradient(circle at 88% 22%, rgba(175, 82, 222, 0.18), transparent 30rem),
+        radial-gradient(circle at 50% 100%, rgba(52, 199, 89, 0.14), transparent 34rem),
+        var(--app-bg);
+    background-attachment: fixed;
     color: var(--app-text);
     font-size: 1rem;
     line-height: 1.5;
@@ -55,43 +63,50 @@ body {
 }
 
 html.dark {
-    background: #020617;
+    background: #000000;
     color-scheme: dark;
-    --app-bg: #020617;
-    --app-surface: #0f172a;
-    --app-surface-subtle: #111c31;
-    --app-surface-accent: #0b2447;
-    --app-surface-danger: #3b0d14;
-    --app-border: #1e293b;
-    --app-border-strong: #334155;
-    --app-text: #e2e8f0;
-    --app-text-muted: #cbd5e1;
-    --app-text-subtle: #94a3b8;
-    --app-positive: #4ade80;
-    --app-positive-surface: #052e16;
-    --app-positive-border: #166534;
-    --app-negative: #f87171;
-    --app-negative-surface: #450a0a;
-    --app-negative-border: #7f1d1d;
-    --app-button: #e2e8f0;
-    --app-button-hover: #f8fafc;
-    --app-button-text: #0f172a;
-    --app-button-disabled: #1e293b;
-    --app-button-disabled-text: #64748b;
-    --app-shadow: 0 1px 2px rgba(2, 6, 23, 0.35), 0 1px 3px rgba(2, 6, 23, 0.45);
-    --app-chart-1: #60a5fa;
-    --app-chart-2: #34d399;
-    --app-chart-3: #fbbf24;
-    --app-chart-4: #f87171;
-    --app-chart-5: #a78bfa;
-    --app-chart-6: #22d3ee;
-    --app-chart-7: #f472b6;
-    --app-chart-8: #a3e635;
-    --app-chart-9: #fb923c;
+    --app-bg: #000000;
+    --app-surface: rgba(38, 38, 42, 0.7);
+    --app-surface-subtle: rgba(58, 58, 62, 0.48);
+    --app-surface-accent: rgba(10, 132, 255, 0.16);
+    --app-surface-danger: rgba(255, 69, 58, 0.15);
+    --app-border: rgba(255, 255, 255, 0.14);
+    --app-border-strong: rgba(255, 255, 255, 0.22);
+    --app-text: #f5f5f7;
+    --app-text-muted: rgba(235, 235, 245, 0.74);
+    --app-text-subtle: rgba(235, 235, 245, 0.54);
+    --app-positive: #30d158;
+    --app-positive-surface: rgba(48, 209, 88, 0.14);
+    --app-positive-border: rgba(48, 209, 88, 0.3);
+    --app-negative: #ff453a;
+    --app-negative-surface: rgba(255, 69, 58, 0.15);
+    --app-negative-border: rgba(255, 69, 58, 0.3);
+    --app-button: #0a84ff;
+    --app-button-hover: #409cff;
+    --app-button-text: #ffffff;
+    --app-button-disabled: rgba(118, 118, 128, 0.24);
+    --app-button-disabled-text: rgba(235, 235, 245, 0.38);
+    --app-shadow:
+        0 22px 60px rgba(0, 0, 0, 0.48),
+        0 2px 10px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --app-chart-1: #0a84ff;
+    --app-chart-2: #30d158;
+    --app-chart-3: #ff9f0a;
+    --app-chart-4: #ff453a;
+    --app-chart-5: #bf5af2;
+    --app-chart-6: #64d2ff;
+    --app-chart-7: #ff375f;
+    --app-chart-8: #40c8e0;
+    --app-chart-9: #5e5ce6;
 }
 
 html.dark body {
-    background: var(--app-bg);
+    background:
+        radial-gradient(circle at 14% 6%, rgba(10, 132, 255, 0.24), transparent 32rem),
+        radial-gradient(circle at 86% 20%, rgba(191, 90, 242, 0.17), transparent 28rem),
+        radial-gradient(circle at 48% 100%, rgba(48, 209, 88, 0.1), transparent 32rem),
+        var(--app-bg);
     color: var(--app-text);
 }
 
@@ -104,7 +119,7 @@ html.dark body {
     min-width: 0;
     overflow-x: hidden;
     padding-bottom: 6rem;
-    background: var(--app-bg);
+    background: transparent;
     color: var(--app-text);
 }
 
@@ -112,6 +127,8 @@ html.dark body {
     background: var(--app-surface);
     border: 1px solid var(--app-border);
     box-shadow: var(--app-shadow);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
+    backdrop-filter: saturate(180%) blur(28px);
 }
 
 .overview-balance-card {
@@ -131,6 +148,9 @@ html.dark body {
 .surface-subtle {
     background: var(--app-surface-subtle);
     border: 1px solid var(--app-border);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    backdrop-filter: saturate(160%) blur(18px);
 }
 
 .surface-positive {
@@ -320,13 +340,16 @@ html.dark body {
 .field-control {
     width: 100%;
     border: 1px solid var(--app-border-strong);
-    background: var(--app-surface);
+    background: var(--app-surface-subtle);
     color: var(--app-text);
     border-radius: 0.75rem;
     padding: 0.75rem 0.875rem;
     font-size: 1rem;
     line-height: 1.5rem;
-    transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
 }
 
 .field-control::placeholder {
@@ -335,7 +358,8 @@ html.dark body {
 
 .field-control:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--app-chart-1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-chart-1) 18%, transparent);
 }
 
 .action-button {
@@ -346,7 +370,7 @@ html.dark body {
     line-height: 1.5rem;
     font-weight: 600;
     box-shadow: var(--app-shadow);
-    transition: background-color 150ms ease, color 150ms ease;
+    transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
 .action-button:disabled {
@@ -360,6 +384,12 @@ html.dark body {
 
 .button-neutral:hover:not(:disabled) {
     background: var(--app-button-hover);
+}
+
+.button-neutral:active:not(:disabled),
+.button-success:active:not(:disabled),
+.empty-state-action:active {
+    transform: scale(0.985);
 }
 
 .button-neutral:disabled {
@@ -475,7 +505,7 @@ html.dark body {
     font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 500;
-    color: #2563eb;
+    color: var(--app-chart-1);
     transition: background-color 150ms ease, color 150ms ease;
 }
 
@@ -499,6 +529,8 @@ html.dark body {
     padding: 1.25rem;
     text-align: center;
     background: var(--app-surface-subtle);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
 }
 
 .empty-state-action {
@@ -556,6 +588,13 @@ html.dark body {
 .chart-carousel-dot.is-active {
     width: 1.5rem;
     background: var(--app-chart-1);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--app-chart-1) 34%, transparent);
+}
+
+.recharts-default-tooltip {
+    box-shadow: var(--app-shadow);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+    backdrop-filter: saturate(180%) blur(22px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -563,6 +602,16 @@ html.dark body {
     .period-progress-fill,
     .chart-carousel-track {
         transition: none;
+    }
+}
+
+@media (hover: hover) {
+    .surface-subtle:hover {
+        background: color-mix(in srgb, var(--app-surface-subtle) 84%, white);
+    }
+
+    html.dark .surface-subtle:hover {
+        background: color-mix(in srgb, var(--app-surface-subtle) 88%, white);
     }
 }
 
@@ -588,8 +637,13 @@ html.dark body {
     left: 0;
     padding: 0.75rem;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--app-bg) 88%, transparent);
-    backdrop-filter: blur(14px);
+    background: linear-gradient(
+        to top,
+        color-mix(in srgb, var(--app-bg) 80%, transparent),
+        transparent
+    );
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
 }
 
 .app-navigation-inner {
@@ -602,6 +656,8 @@ html.dark body {
     border-radius: 1rem;
     background: var(--app-surface);
     box-shadow: var(--app-shadow);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
+    backdrop-filter: saturate(180%) blur(28px);
 }
 
 .app-navigation-item {
@@ -612,11 +668,19 @@ html.dark body {
     line-height: 1rem;
     font-weight: 600;
     white-space: nowrap;
+    transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
 
 .app-navigation-item.is-active {
-    background: var(--app-button);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--app-button) 88%, white), var(--app-button));
     color: var(--app-button-text);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        0 5px 16px color-mix(in srgb, var(--app-button) 30%, transparent);
+}
+
+.app-navigation-item:active {
+    transform: scale(0.98);
 }
 
 @media (max-width: 360px) {
