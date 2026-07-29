@@ -793,7 +793,10 @@ function App() {
     return (
         <div className="app-shell p-4 transition-colors">
 
-            <div className="max-w-xl mx-auto space-y-4">
+            <div
+                className="app-view-stack max-w-xl mx-auto"
+                style={{display: activeView === 'insight' ? 'none' : undefined}}
+            >
 
                 {activeView === 'overview' && (
                 <div className="surface-card overview-balance-card rounded-3xl p-6 transition-colors">
@@ -1431,7 +1434,7 @@ function App() {
             )}
 
             {activeView === 'insight' && (
-                <div className="mx-auto mt-4 max-w-xl">
+                <div className="app-view-stack mx-auto max-w-xl">
                     <div className="surface-card w-full rounded-3xl p-6 transition-colors">
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
