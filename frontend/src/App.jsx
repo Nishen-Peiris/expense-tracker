@@ -76,6 +76,7 @@ const UI_TEXT = {
     addTransaction: 'Add transaction',
     noCategorySpending: 'No expense data to chart for this selection.',
     expenseComparison: 'Expense Comparison',
+    cashFlow: 'Cash Flow',
     currentPeriod: 'Current period',
     previousPeriod: 'Previous period',
     comparisonError: 'We could not load both reporting periods for comparison.',
@@ -641,8 +642,10 @@ function App() {
             ? 100
             : 0
 
-    const cashFlowProgress = Math.min(spentPercentage, 100)
     const cashFlowToneClass = spentPercentage > 100 ? 'is-over' : ''
+    const cashFlowScale = Math.max(dashboard.income, dashboard.expenses, 1)
+    const cashFlowExpenseWidth = (dashboard.expenses / cashFlowScale) * 100
+    const cashFlowIncomeMarker = (dashboard.income / cashFlowScale) * 100
 
     const finishChartSwipe = (touchEnd) => {
         if (chartTouchStart === null) {
@@ -652,7 +655,11 @@ function App() {
         const distance = chartTouchStart - touchEnd
 
         if (Math.abs(distance) > 40) {
-            setChartSlide(distance > 0 ? 1 : 0)
+            setChartSlide(currentSlide => (
+                distance > 0
+                    ? Math.min(currentSlide + 1, 2)
+                    : Math.max(currentSlide - 1, 0)
+            ))
         }
 
         setChartTouchStart(null)
@@ -790,45 +797,6 @@ function App() {
                             valueClassName="tabular-nums"
                         />
                     </p>
-
-                    <div className="cash-flow-summary mt-5">
-                        <div className="cash-flow-values">
-                            <div className="min-w-0">
-                                <span className="text-subtle">{UI_TEXT.income}</span>
-                                <p className="cash-flow-value tone-positive tabular-nums">
-                                    <CurrencyAmount amount={dashboard.income} variant="compact"/>
-                                </p>
-                            </div>
-                            <div className="min-w-0 text-right">
-                                <span className="text-subtle">{UI_TEXT.expenses}</span>
-                                <p className="cash-flow-value tone-negative tabular-nums">
-                                    <CurrencyAmount amount={dashboard.expenses} variant="compact"/>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div
-                            className={`cash-flow-track ${cashFlowToneClass}`.trim()}
-                            role="progressbar"
-                            aria-label="Expenses as a percentage of income"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                            aria-valuenow={cashFlowProgress}
-                        >
-                            <span
-                                className="cash-flow-fill"
-                                style={{width: `${cashFlowProgress}%`}}
-                            />
-                        </div>
-
-                        <p className={`cash-flow-caption ${spentPercentage > 100 ? 'tone-negative' : 'text-subtle'}`}>
-                            {dashboard.income > 0
-                                ? `${numberFormatter.format(spentPercentage)}% of income spent`
-                                : dashboard.expenses > 0
-                                    ? 'Expenses recorded with no income in this period'
-                                    : 'Add income and expenses to track cash flow'}
-                        </p>
-                    </div>
                 </div>
                 )}
 
@@ -959,7 +927,7 @@ function App() {
                     >
                     <div
                         className="chart-carousel-track"
-                        style={{transform: `translateX(-${chartSlide * 50}%)`}}
+                        style={{transform: `translateX(-${chartSlide * (100 / 3)}%)`}}
                     >
                     <section
                         className="chart-carousel-slide"
@@ -1126,11 +1094,74 @@ function App() {
                         </div>
                     )}
                     </section>
+
+                    <section
+                        className="chart-carousel-slide"
+                        aria-hidden={chartSlide !== 2}
+                        inert={chartSlide !== 2}
+                    >
+                        <h2 className="section-title">{UI_TEXT.cashFlow}</h2>
+                        <p className="text-muted mt-1">Expenses measured against recorded income</p>
+
+                        <div className="cash-flow-chart mt-6">
+                            <div
+                                className={`cash-flow-bullet ${cashFlowToneClass}`.trim()}
+                                role="img"
+                                aria-label={
+                                    dashboard.income > 0
+                                        ? `${numberFormatter.format(spentPercentage)} percent of income spent`
+                                        : 'No income recorded for this period'
+                                }
+                            >
+                                <span
+                                    className="cash-flow-bullet-fill"
+                                    style={{width: `${cashFlowExpenseWidth}%`}}
+                                />
+                                {dashboard.income > 0 && (
+                                    <span
+                                        className="cash-flow-income-marker"
+                                        style={{left: `${cashFlowIncomeMarker}%`}}
+                                    >
+                                        <span>Income</span>
+                                    </span>
+                                )}
+                            </div>
+
+                            <p className={`cash-flow-chart-caption ${spentPercentage > 100 ? 'tone-negative' : 'text-muted'}`}>
+                                {dashboard.income > 0
+                                    ? `${numberFormatter.format(spentPercentage)}% of income spent`
+                                    : dashboard.expenses > 0
+                                        ? 'Expenses recorded with no income in this period'
+                                        : 'Add income and expenses to see your cash flow'}
+                            </p>
+
+                            <div className="cash-flow-metrics">
+                                <div>
+                                    <p className="text-subtle">{UI_TEXT.income}</p>
+                                    <p className="cash-flow-metric tone-positive">
+                                        <CurrencyAmount amount={dashboard.income} variant="compact"/>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-subtle">{UI_TEXT.expenses}</p>
+                                    <p className="cash-flow-metric tone-negative">
+                                        <CurrencyAmount amount={dashboard.expenses} variant="compact"/>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-subtle">{UI_TEXT.availableBalance}</p>
+                                    <p className={`cash-flow-metric ${remainingToneClass}`}>
+                                        <CurrencyAmount amount={dashboard.remaining} variant="compact"/>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                     </div>
                     </div>
 
                     <div className="chart-carousel-controls" aria-label="Chart selection">
-                        {[UI_TEXT.expenseComparison, UI_TEXT.spendingByCategory].map((label, index) => (
+                        {[UI_TEXT.expenseComparison, UI_TEXT.spendingByCategory, UI_TEXT.cashFlow].map((label, index) => (
                             <button
                                 key={label}
                                 type="button"
