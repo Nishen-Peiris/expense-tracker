@@ -13,19 +13,15 @@ expense-tracker/
 
 ## Release Flow
 
-The shell script prepares the backend for container packaging:
-
-1. Build the frontend
-2. Copy the frontend build output into the backend static resources
-3. Build the backend container or package from `backend/`
+The versioned image script pulls the latest source, shows existing image
+versions, prompts for a new version, and builds the complete application.
+The Dockerfile builds both the React frontend and Spring Boot backend.
 
 Run:
 
 ```bash
-bash scripts/build-release.sh
+bash scripts/build-image.sh
 ```
-
-The Dockerfile in `backend/` handles the backend packaging step.
 
 ## Applications
 

@@ -3,7 +3,8 @@ version: '3.9'
 services:
   expense-tracker-backend:
     build:
-      context: .
+      context: ..
+      dockerfile: backend/Dockerfile
     image: expense-tracker-backend:latest
     container_name: expense-tracker-backend
     restart: always
