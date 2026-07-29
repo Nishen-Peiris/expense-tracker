@@ -843,7 +843,7 @@ function App() {
                 )}
 
                 {activeView === 'transactions' && (
-                <div className="surface-card rounded-3xl p-6 transition-colors">
+                <div className="surface-card transactions-card rounded-3xl p-6 transition-colors">
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                             <h2 className="section-title">{UI_TEXT.transactions}</h2>
