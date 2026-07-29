@@ -15,7 +15,9 @@ expense-tracker/
 
 The versioned image script pulls the latest source, shows existing image
 versions, prompts for a new version, and builds the complete application.
-The Dockerfile builds both the React frontend and Spring Boot backend.
+The Dockerfile builds both the React frontend and Spring Boot backend. After a
+successful build, the script keeps the new image and the newest previous
+version for rollback, then removes older image tags that are not in use.
 
 Run:
 

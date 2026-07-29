@@ -57,3 +57,40 @@ docker build \
 echo
 echo "Build completed successfully."
 echo "Created image: ${IMAGE_NAME}:${NEW_VERSION}"
+
+KEEP_OLD_VERSION=$(
+    printf '%s\n' "${EXISTING_VERSIONS}" |
+        awk '/^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$/' |
+        tail -n 1
+)
+
+if [[ -z "${KEEP_OLD_VERSION}" ]]; then
+    KEEP_OLD_VERSION=$(printf '%s\n' "${EXISTING_VERSIONS}" | tail -n 1)
+fi
+
+echo
+if [[ -n "${KEEP_OLD_VERSION}" ]]; then
+    echo "Keeping rollback image: ${IMAGE_NAME}:${KEEP_OLD_VERSION}"
+else
+    echo "No previous image exists to keep for rollback."
+fi
+
+while IFS= read -r OLD_VERSION; do
+    if [[ -z "${OLD_VERSION}" || "${OLD_VERSION}" == "${KEEP_OLD_VERSION}" ]]; then
+        continue
+    fi
+
+    echo "Removing old image: ${IMAGE_NAME}:${OLD_VERSION}"
+
+    if ! docker image rm "${IMAGE_NAME}:${OLD_VERSION}"; then
+        echo "Warning: Could not remove ${IMAGE_NAME}:${OLD_VERSION}; it may be used by a container." >&2
+    fi
+done <<< "${EXISTING_VERSIONS}"
+
+echo
+echo "Image retention complete."
+echo "Current image: ${IMAGE_NAME}:${NEW_VERSION}"
+
+if [[ -n "${KEEP_OLD_VERSION}" ]]; then
+    echo "Rollback image: ${IMAGE_NAME}:${KEEP_OLD_VERSION}"
+fi
