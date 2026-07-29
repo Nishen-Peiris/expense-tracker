@@ -43,7 +43,6 @@ const UI_TEXT = {
     updateTransaction: 'Update Transaction',
     updatingTransaction: 'Updating Transaction...',
     spendingByCategory: 'Spending by Category',
-    categoryReport: 'Category Report',
     allCategories: 'All Categories',
     transactions: 'Transactions',
     recentTransactions: 'Recent Transactions',
@@ -736,9 +735,22 @@ function App() {
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
-                    <h2 className="section-title mb-4">
-                        {selectedCategory === 'ALL' ? UI_TEXT.recentTransactions : selectedCategory}
-                    </h2>
+                    <h2 className="section-title">{UI_TEXT.recentTransactions}</h2>
+
+                    <label className="field-label mt-4 block" htmlFor="category-filter">
+                        {UI_TEXT.category}
+                    </label>
+                    <select
+                        id="category-filter"
+                        className="field-control mt-1 mb-4"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                        <option value="ALL">{UI_TEXT.allCategories}</option>
+                        {REPORT_CATEGORIES.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
+                    </select>
 
                     {transactionsLoading && (
                         <div className="empty-state" role="status">
@@ -833,30 +845,7 @@ function App() {
                 </div>
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
-                            <p className="text-muted mt-1">{UI_TEXT.categoryReport}</p>
-                        </div>
-                        <span className="text-subtle shrink-0 tabular-nums">
-                            {numberFormatter.format(reportTransactions.length)} {UI_TEXT.transactions.toLowerCase()}
-                        </span>
-                    </div>
-
-                    <label className="field-label mt-4 block" htmlFor="category-filter">
-                        {UI_TEXT.category}
-                    </label>
-                    <select
-                        id="category-filter"
-                        className="field-control mt-1"
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                    >
-                        <option value="ALL">{UI_TEXT.allCategories}</option>
-                        {REPORT_CATEGORIES.map(category => (
-                            <option key={category} value={category}>{category}</option>
-                        ))}
-                    </select>
+                    <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
 
                     {!transactionsLoading && !transactionsError && chartData.length > 0 ? (
                         <div className="mt-4 flex flex-col items-center gap-4">
