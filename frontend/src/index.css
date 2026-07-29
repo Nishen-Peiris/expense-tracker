@@ -114,19 +114,6 @@ html.dark body {
     box-shadow: var(--app-shadow);
 }
 
-.reporting-context {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.reporting-context-range {
-    margin-top: 0.125rem;
-    font-weight: 600;
-}
-
 .overview-balance-card {
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;

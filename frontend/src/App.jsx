@@ -706,16 +706,8 @@ function App() {
     const transactionForm = parsedTransaction || editingTransaction
     const isEditingTransaction = Boolean(editingTransaction)
 
-    const ReportingContext = () => (
-        <div className="reporting-context">
-            <div className="min-w-0">
-                <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
-                <p className="text-body reporting-context-range">
-                    {formatDateRange(selectedDateRange)}
-                </p>
-            </div>
-
-            <label className="relative block h-10 w-10 shrink-0">
+    const MonthSelector = () => (
+        <label className="relative block h-10 w-10 shrink-0">
                 <span
                     aria-label="Select month"
                     title="Select month"
@@ -749,8 +741,7 @@ function App() {
                         }
                     }}
                 />
-            </label>
-        </div>
+        </label>
     )
 
     return (
@@ -760,11 +751,11 @@ function App() {
 
                 {activeView === 'overview' && (
                 <div className="surface-card overview-balance-card rounded-3xl p-6 transition-colors">
-                    <ReportingContext/>
-
-                    <div className="mt-5 flex items-start justify-between gap-3 border-t pt-5"
-                         style={{borderColor: 'var(--app-border)'}}>
-                        <h1 className="section-title">{UI_TEXT.availableBalance}</h1>
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <h1 className="section-title">{UI_TEXT.availableBalance}</h1>
+                            <p className="text-muted mt-1">{formatDateRange(selectedDateRange)}</p>
+                        </div>
 
                         <div className="flex flex-wrap items-center justify-end gap-2">
                             <button
@@ -789,6 +780,7 @@ function App() {
                                 </svg>
                             </button>
 
+                            <MonthSelector/>
                         </div>
                     </div>
 
@@ -842,15 +834,13 @@ function App() {
 
                 {activeView === 'transactions' && (
                 <div className="surface-card rounded-3xl p-6 transition-colors">
-
-                    <ReportingContext/>
-
-                    <h2
-                        className="section-title mt-5 border-t pt-5"
-                        style={{borderColor: 'var(--app-border)'}}
-                    >
-                        {UI_TEXT.transactions}
-                    </h2>
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <h2 className="section-title">{UI_TEXT.transactions}</h2>
+                            <p className="text-muted mt-1">{formatDateRange(selectedDateRange)}</p>
+                        </div>
+                        <MonthSelector/>
+                    </div>
 
                     <label className="field-label mt-4 block" htmlFor="category-filter">
                         {UI_TEXT.category}
@@ -1322,17 +1312,14 @@ function App() {
             {activeView === 'insight' && (
                 <div className="mx-auto mt-4 max-w-xl">
                     <div className="surface-card w-full rounded-3xl p-6 transition-colors">
-                        <ReportingContext/>
-
-                        <div
-                            className="mt-5 border-t pt-5"
-                            style={{borderColor: 'var(--app-border)'}}
-                        >
-                            <div>
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
                                 <h2 className="section-title">
                                     {UI_TEXT.monthInsight}
                                 </h2>
+                                <p className="text-muted mt-1">{formatDateRange(selectedDateRange)}</p>
                             </div>
+                            <MonthSelector/>
                         </div>
 
                         {!monthInsight && insightLoading && (
