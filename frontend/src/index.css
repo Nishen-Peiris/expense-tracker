@@ -114,6 +114,20 @@ html.dark body {
     box-shadow: var(--app-shadow);
 }
 
+.overview-balance-card {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-color: transparent;
+    box-shadow: none;
+}
+
+.overview-category-card {
+    margin-top: -1rem;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 0;
+}
+
 .surface-subtle {
     background: var(--app-surface-subtle);
     border: 1px solid var(--app-border);
@@ -514,6 +528,16 @@ html.dark body {
     .surface-card {
         border-radius: 1.25rem;
         padding: 1rem;
+    }
+
+    .surface-card.overview-balance-card {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    .surface-card.overview-category-card {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
     }
 
     .page-title {

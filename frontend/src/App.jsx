@@ -586,7 +586,8 @@ function App() {
 
             <div className="max-w-xl mx-auto space-y-4">
 
-                <div className="surface-card rounded-3xl p-6 transition-colors">
+                {activeView === 'overview' && (
+                <div className="surface-card overview-balance-card rounded-3xl p-6 transition-colors">
                     <div className="flex items-start justify-between gap-3">
                         <h1 className="section-title">{UI_TEXT.availableBalance}</h1>
 
@@ -701,6 +702,7 @@ function App() {
                         </p>
                     </div>
                 </div>
+                )}
 
                 {activeView === 'transactions' && (
                 <div className="surface-card rounded-3xl p-6 transition-colors">
@@ -816,7 +818,7 @@ function App() {
                 )}
 
                 {activeView === 'overview' && (
-                <div className="surface-card rounded-3xl p-6 transition-colors">
+                <div className="surface-card overview-category-card rounded-3xl p-6 transition-colors">
                     <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
 
                     {transactionsLoading && (
