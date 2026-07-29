@@ -1136,23 +1136,41 @@ function App() {
                             </p>
 
                             <div className="cash-flow-metrics">
-                                <div>
-                                    <p className="text-subtle">{UI_TEXT.income}</p>
-                                    <p className="cash-flow-metric tone-positive">
-                                        <CurrencyAmount amount={dashboard.income} variant="compact"/>
-                                    </p>
+                                <div className="cash-flow-metric-item">
+                                    <span
+                                        className="h-3 w-3 shrink-0 rounded-full"
+                                        style={{backgroundColor: 'var(--app-chart-2)'}}
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="text-body">{UI_TEXT.income}</p>
+                                        <p className="cash-flow-metric tone-positive">
+                                            <CurrencyAmount amount={dashboard.income} variant="compact"/>
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-subtle">{UI_TEXT.expenses}</p>
-                                    <p className="cash-flow-metric tone-negative">
-                                        <CurrencyAmount amount={dashboard.expenses} variant="compact"/>
-                                    </p>
+                                <div className="cash-flow-metric-item">
+                                    <span
+                                        className="h-3 w-3 shrink-0 rounded-full"
+                                        style={{backgroundColor: 'var(--app-chart-1)'}}
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="text-body">{UI_TEXT.expenses}</p>
+                                        <p className="cash-flow-metric tone-negative">
+                                            <CurrencyAmount amount={dashboard.expenses} variant="compact"/>
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-subtle">{UI_TEXT.availableBalance}</p>
-                                    <p className={`cash-flow-metric ${remainingToneClass}`}>
-                                        <CurrencyAmount amount={dashboard.remaining} variant="compact"/>
-                                    </p>
+                                <div className="cash-flow-metric-item">
+                                    <span
+                                        className="h-3 w-3 shrink-0 rounded-full"
+                                        style={{backgroundColor: 'var(--app-chart-3)'}}
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="text-body">{UI_TEXT.availableBalance}</p>
+                                        <p className={`cash-flow-metric ${remainingToneClass}`}>
+                                            <CurrencyAmount amount={dashboard.remaining} variant="compact"/>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
