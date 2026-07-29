@@ -124,7 +124,7 @@ html.dark body {
     min-width: 0;
     flex-direction: column;
     overflow-x: hidden;
-    padding-bottom: 5.5rem;
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
     background: transparent;
     color: var(--app-text);
 }
@@ -139,6 +139,8 @@ html.dark body {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    padding-bottom: 0.75rem;
+    scroll-padding-bottom: 0.75rem;
     scrollbar-gutter: stable;
     -webkit-overflow-scrolling: touch;
 }
@@ -155,6 +157,10 @@ html.dark body {
     flex: 1 1 auto;
     flex-direction: column;
     overflow: hidden;
+}
+
+.transactions-card > :not(.recent-transactions-list) {
+    flex-shrink: 0;
 }
 
 .app-view-stack > .overview-category-card {
@@ -399,6 +405,14 @@ html.dark body {
     outline: none;
     border-color: var(--app-chart-1);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-chart-1) 18%, transparent);
+}
+
+select.field-control {
+    height: 3.25rem;
+    min-height: 3.25rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: normal;
 }
 
 .action-button {
@@ -731,7 +745,7 @@ html.dark body {
 @media (max-width: 360px) {
     .app-shell {
         padding: 0.5rem;
-        padding-bottom: 5.25rem;
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
     }
 
     .surface-card {
