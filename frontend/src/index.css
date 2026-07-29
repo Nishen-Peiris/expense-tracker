@@ -120,7 +120,6 @@ html.dark body {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.25rem 0.25rem 0.5rem;
 }
 
 .reporting-context-range {

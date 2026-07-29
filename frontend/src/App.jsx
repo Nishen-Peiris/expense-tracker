@@ -367,21 +367,6 @@ function App() {
     }, [activeView, selectedMonth])
 
     useEffect(() => {
-        if (
-            activeView !== 'overview'
-            || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ) {
-            return undefined
-        }
-
-        const interval = window.setInterval(() => {
-            setChartSlide(currentSlide => currentSlide === 0 ? 1 : 0)
-        }, 7000)
-
-        return () => window.clearInterval(interval)
-    }, [activeView, chartSlide])
-
-    useEffect(() => {
         if (typeof window === 'undefined') {
             return undefined
         }
@@ -721,59 +706,64 @@ function App() {
     const transactionForm = parsedTransaction || editingTransaction
     const isEditingTransaction = Boolean(editingTransaction)
 
+    const ReportingContext = () => (
+        <div className="reporting-context">
+            <div className="min-w-0">
+                <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
+                <p className="text-body reporting-context-range">
+                    {formatDateRange(selectedDateRange)}
+                </p>
+            </div>
+
+            <label className="relative block h-10 w-10 shrink-0">
+                <span
+                    aria-label="Select month"
+                    title="Select month"
+                    className="surface-subtle text-muted flex h-10 w-10 items-center justify-center rounded-xl"
+                >
+                    <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <path d="M8 2v4"/>
+                        <path d="M16 2v4"/>
+                        <path d="M3 10h18"/>
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    </svg>
+                </span>
+
+                <input
+                    type="month"
+                    aria-label="Month"
+                    className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
+                    value={selectedMonth}
+                    onChange={(event) => {
+                        if (event.target.value) {
+                            setSelectedMonth(event.target.value)
+                        }
+                    }}
+                />
+            </label>
+        </div>
+    )
+
     return (
         <div className="app-shell p-4 transition-colors">
 
             <div className="max-w-xl mx-auto space-y-4">
 
-                <div className="reporting-context">
-                    <div className="min-w-0">
-                        <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
-                        <p className="text-body reporting-context-range">
-                            {formatDateRange(selectedDateRange)}
-                        </p>
-                    </div>
-
-                    <label className="relative block h-10 w-10 shrink-0">
-                        <span
-                            aria-label="Select month"
-                            title="Select month"
-                            className="surface-subtle text-muted flex h-10 w-10 items-center justify-center rounded-xl"
-                        >
-                            <svg
-                                aria-hidden="true"
-                                viewBox="0 0 24 24"
-                                className="h-5 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <path d="M8 2v4"/>
-                                <path d="M16 2v4"/>
-                                <path d="M3 10h18"/>
-                                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                            </svg>
-                        </span>
-
-                        <input
-                            type="month"
-                            aria-label="Month"
-                            className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
-                            value={selectedMonth}
-                            onChange={(event) => {
-                                if (event.target.value) {
-                                    setSelectedMonth(event.target.value)
-                                }
-                            }}
-                        />
-                    </label>
-                </div>
-
                 {activeView === 'overview' && (
                 <div className="surface-card overview-balance-card rounded-3xl p-6 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
+                    <ReportingContext/>
+
+                    <div className="mt-5 flex items-start justify-between gap-3 border-t pt-5"
+                         style={{borderColor: 'var(--app-border)'}}>
                         <h1 className="section-title">{UI_TEXT.availableBalance}</h1>
 
                         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -853,7 +843,14 @@ function App() {
                 {activeView === 'transactions' && (
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
-                    <h2 className="section-title">{UI_TEXT.transactions}</h2>
+                    <ReportingContext/>
+
+                    <h2
+                        className="section-title mt-5 border-t pt-5"
+                        style={{borderColor: 'var(--app-border)'}}
+                    >
+                        {UI_TEXT.transactions}
+                    </h2>
 
                     <label className="field-label mt-4 block" htmlFor="category-filter">
                         {UI_TEXT.category}
@@ -1325,7 +1322,12 @@ function App() {
             {activeView === 'insight' && (
                 <div className="mx-auto mt-4 max-w-xl">
                     <div className="surface-card w-full rounded-3xl p-6 transition-colors">
-                        <div>
+                        <ReportingContext/>
+
+                        <div
+                            className="mt-5 border-t pt-5"
+                            style={{borderColor: 'var(--app-border)'}}
+                        >
                             <div>
                                 <h2 className="section-title">
                                     {UI_TEXT.monthInsight}
