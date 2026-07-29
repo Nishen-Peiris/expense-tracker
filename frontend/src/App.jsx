@@ -1100,7 +1100,10 @@ function App() {
                                         <Tooltip
                                             contentStyle={tooltipStyle}
                                             itemStyle={{color: 'var(--app-text)'}}
-                                            formatter={(value) => [`LKR ${formatLkrValue(value)}`, 'Amount']}
+                                            formatter={(value, _name, item) => [
+                                                `LKR ${formatLkrValue(value)}`,
+                                                item.payload.name,
+                                            ]}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -1115,9 +1118,6 @@ function App() {
                                         />
                                         <span className="min-w-0">
                                             <span className="text-body block truncate">{entry.name}</span>
-                                            <span className="text-subtle tabular-nums">
-                                                LKR {formatLkrValue(entry.value)}
-                                            </span>
                                         </span>
                                     </div>
                                 ))}
