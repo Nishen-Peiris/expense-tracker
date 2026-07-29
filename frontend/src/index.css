@@ -44,6 +44,7 @@ html {
 
 body {
     margin: 0;
+    min-width: 0;
     font-family: var(--app-font-sans);
     background: var(--app-bg);
     color: var(--app-text);
@@ -100,6 +101,8 @@ html.dark body {
 
 .app-shell {
     min-height: 100vh;
+    min-width: 0;
+    overflow-x: hidden;
     background: var(--app-bg);
     color: var(--app-text);
 }
@@ -183,6 +186,65 @@ html.dark body {
     font-size: 1.5rem;
     line-height: 2rem;
     font-weight: 600;
+}
+
+.cash-flow-summary {
+    border-top: 1px solid var(--app-border);
+    padding-top: 1rem;
+}
+
+.cash-flow-values {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.cash-flow-value {
+    margin-top: 0.125rem;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    font-weight: 650;
+}
+
+.cash-flow-track {
+    position: relative;
+    height: 0.5rem;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--app-positive-surface);
+    border: 1px solid var(--app-positive-border);
+}
+
+.cash-flow-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--app-negative);
+    transition: width 250ms ease;
+}
+
+.cash-flow-track.is-over {
+    background: var(--app-negative-surface);
+    border-color: var(--app-negative-border);
+}
+
+.cash-flow-track.is-over .cash-flow-fill {
+    background-image: repeating-linear-gradient(
+        135deg,
+        var(--app-negative) 0,
+        var(--app-negative) 6px,
+        transparent 6px,
+        transparent 10px
+    );
+    background-color: var(--app-negative);
+}
+
+.cash-flow-caption {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
 }
 
 .field-label {
@@ -293,26 +355,25 @@ html.dark body {
 .currency-amount-compact {
     display: inline-flex;
     max-width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
+    align-items: baseline;
+    gap: 0.3rem;
+    white-space: nowrap;
 }
 
 .currency-value-compact {
-    display: block;
     max-width: 100%;
     white-space: nowrap;
     overflow-wrap: normal;
     word-break: normal;
-    line-height: 1;
+    line-height: inherit;
 }
 
 .currency-label-compact {
     color: inherit;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     line-height: 1rem;
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.06em;
     opacity: 0.7;
     text-transform: uppercase;
 }
@@ -367,4 +428,75 @@ html.dark body {
 
 .recent-transaction-item {
     min-height: 5.25rem;
+}
+
+.empty-state {
+    border: 1px dashed var(--app-border-strong);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+    background: var(--app-surface-subtle);
+}
+
+.empty-state-action {
+    margin-top: 0.75rem;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--app-button);
+    color: var(--app-button-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.category-chart {
+    height: 13rem;
+}
+
+.category-legend {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.category-legend-item {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 360px) {
+    .app-shell {
+        padding: 0.5rem;
+    }
+
+    .surface-card {
+        border-radius: 1.25rem;
+        padding: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.9rem;
+    }
+
+    .category-legend {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .recent-transaction-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .recent-transaction-item > .text-right {
+        width: 100%;
+        text-align: left;
+    }
+
+    .recent-transaction-item .currency-amount-inline,
+    .recent-transaction-item .transaction-actions {
+        justify-content: flex-start;
+    }
 }

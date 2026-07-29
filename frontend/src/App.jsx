@@ -61,6 +61,13 @@ const UI_TEXT = {
     saveTransactionError: 'Could not save the transaction.',
     updateTransactionError: 'Could not update the transaction.',
     deleteTransactionError: 'Could not delete the transaction.',
+    loadingTransactions: 'Loading your transactions...',
+    transactionsError: 'We could not load transactions for this reporting period.',
+    retry: 'Try again',
+    noTransactions: 'No transactions in this reporting period yet.',
+    noTransactionsHelp: 'Add a banking SMS to see your balance and spending breakdown.',
+    addTransaction: 'Add transaction',
+    noCategorySpending: 'No expense data to chart for this selection.',
 }
 
 const defaultCategoryForType = (type) => {
@@ -88,6 +95,8 @@ const formatConfidence = (confidence) => {
 }
 
 const toAmount = (amount) => Number(amount) || 0
+const numberFormatter = new Intl.NumberFormat('en-LK', {maximumFractionDigits: 2})
+const formatLkrValue = (amount) => numberFormatter.format(toAmount(amount))
 
 const toTransactionFormState = (transaction) => ({
     ...transaction,
@@ -215,7 +224,7 @@ const CurrencyAmount = ({
                     LKR
                 </span>
                 <span className={`currency-value-compact ${valueClassName}`.trim()}>
-                    {toAmount(amount).toLocaleString()}
+                    {formatLkrValue(amount)}
                 </span>
             </span>
         )
@@ -227,7 +236,7 @@ const CurrencyAmount = ({
                 LKR
             </span>
             <span className={valueClassName}>
-                {toAmount(amount).toLocaleString()}
+                {formatLkrValue(amount)}
             </span>
         </span>
     )
@@ -262,6 +271,10 @@ function App() {
     const [isInsightModalOpen, setIsInsightModalOpen] = useState(false)
 
     const [deletingTransactionId, setDeletingTransactionId] = useState(null)
+
+    const [transactionsLoading, setTransactionsLoading] = useState(true)
+
+    const [transactionsError, setTransactionsError] = useState(false)
 
     useEffect(() => {
         loadTransactions(selectedMonth)
@@ -304,13 +317,23 @@ function App() {
     const loadTransactions = async (monthToLoad = selectedMonth) => {
         const dateRange = getMonthDateRange(monthToLoad)
 
-        const response = await api.get('/transactions', {
-            params: dateRange,
-        })
+        setTransactionsLoading(true)
+        setTransactionsError(false)
 
-        setTransactions(sortTransactionsByDateDesc(
-            response.data.filter(transaction => isTransactionInDateRange(transaction, dateRange)),
-        ))
+        try {
+            const response = await api.get('/transactions', {
+                params: dateRange,
+            })
+
+            setTransactions(sortTransactionsByDateDesc(
+                response.data.filter(transaction => isTransactionInDateRange(transaction, dateRange)),
+            ))
+        } catch (e) {
+            setTransactions([])
+            setTransactionsError(true)
+        } finally {
+            setTransactionsLoading(false)
+        }
     }
 
     const loadMonthInsight = async (monthToLoad = selectedMonth) => {
@@ -456,8 +479,6 @@ function App() {
         ? transactions
         : transactions.filter(transaction => transaction.category === selectedCategory)
 
-    const reportSummary = summarizeTransactions(reportTransactions)
-
     const categoryTotals = {}
 
     transactions.forEach(transaction => {
@@ -504,6 +525,15 @@ function App() {
         : dashboard.remaining < 0
             ? 'tone-negative'
             : 'tone-default'
+
+    const spentPercentage = dashboard.income > 0
+        ? Math.round((dashboard.expenses / dashboard.income) * 100)
+        : dashboard.expenses > 0
+            ? 100
+            : 0
+
+    const cashFlowProgress = Math.min(spentPercentage, 100)
+    const cashFlowToneClass = spentPercentage > 100 ? 'is-over' : ''
 
     const openSmsModal = () => {
         setIsSmsModalOpen(true)
@@ -568,7 +598,7 @@ function App() {
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
                     <div className="flex items-start justify-between gap-3">
-                        <p className="text-muted">{UI_TEXT.availableBalance}</p>
+                        <h1 className="section-title">{UI_TEXT.availableBalance}</h1>
 
                         <div className="flex flex-wrap items-center justify-end gap-2">
                             <button
@@ -653,166 +683,98 @@ function App() {
                         </div>
                     </div>
 
-                    <h1 className={`page-title mt-2 ${remainingToneClass}`}>
+                    <p className={`page-title mt-2 ${remainingToneClass}`}>
                         <CurrencyAmount
                             amount={dashboard.remaining}
                             valueClassName="tabular-nums"
                         />
-                    </h1>
+                    </p>
 
                     <p className="text-muted mt-2">
                         {UI_TEXT.reportingPeriod}: {formatDateRange(selectedDateRange)}
                     </p>
 
-                    <div className="mt-6 grid grid-cols-2 gap-3">
-
-                        <div className="surface-positive min-w-0 rounded-2xl p-3">
-                            <p className="text-subtle">{UI_TEXT.income}</p>
-                            <p className="report-metric-value tone-positive tabular-nums">
-                                <CurrencyAmount
-                                    amount={dashboard.income}
-                                    variant="compact"
-                                    valueClassName="tabular-nums"
-                                />
-                            </p>
+                    <div className="cash-flow-summary mt-5">
+                        <div className="cash-flow-values">
+                            <div className="min-w-0">
+                                <span className="text-subtle">{UI_TEXT.income}</span>
+                                <p className="cash-flow-value tone-positive tabular-nums">
+                                    <CurrencyAmount amount={dashboard.income} variant="compact"/>
+                                </p>
+                            </div>
+                            <div className="min-w-0 text-right">
+                                <span className="text-subtle">{UI_TEXT.expenses}</span>
+                                <p className="cash-flow-value tone-negative tabular-nums">
+                                    <CurrencyAmount amount={dashboard.expenses} variant="compact"/>
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="surface-negative min-w-0 rounded-2xl p-3">
-                            <p className="text-subtle">{UI_TEXT.expenses}</p>
-                            <p className="report-metric-value tone-negative tabular-nums">
-                                <CurrencyAmount
-                                    amount={dashboard.expenses}
-                                    variant="compact"
-                                    valueClassName="tabular-nums"
-                                />
-                            </p>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div className="surface-card rounded-3xl p-6 transition-colors">
-
-                    <h2 className="section-title mb-4">
-                        {UI_TEXT.spendingByCategory}
-                    </h2>
-
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="h-64 w-full max-w-sm">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={chartData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    outerRadius={90}
-                                    cx="50%"
-                                    cy="50%"
-                                >
-                                    {chartData.map((entry, index) => (
-                                        <Cell
-                                            key={index}
-                                            fill={colors[index % colors.length]}
-                                        />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={tooltipStyle}
-                                    itemStyle={{color: isDarkMode ? '#e2e8f0' : '#0f172a'}}
-                                    formatter={(value) => [`LKR ${Number(value).toLocaleString()}`, 'Amount']}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        </div>
-
-                        <div className="flex w-full flex-wrap justify-center gap-x-6 gap-y-3 text-center text-base">
-                            {chartData.map((entry, index) => (
-                                <div
-                                    key={entry.name}
-                                    className="flex items-center gap-2"
-                                >
-                                    <span
-                                        className="h-3.5 w-3.5 rounded-full shrink-0"
-                                        style={{backgroundColor: colors[index % colors.length]}}
-                                    />
-                                    <span className="text-body">
-                                        {entry.name}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                </div>
-
-                <div className="surface-card rounded-3xl p-6 transition-colors">
-
-                    <h2 className="section-title mb-4">
-                        {UI_TEXT.categoryReport}
-                    </h2>
-
-                    <div>
-                        <label className="field-label">
-                            {UI_TEXT.category}
-                        </label>
-
-                        <select
-                            className="field-control mt-1"
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        <div
+                            className={`cash-flow-track ${cashFlowToneClass}`.trim()}
+                            role="progressbar"
+                            aria-label="Expenses as a percentage of income"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow={cashFlowProgress}
                         >
-                            <option value="ALL">{UI_TEXT.allCategories}</option>
-                            {REPORT_CATEGORIES.map(category => (
-                                <option
-                                    key={category}
-                                    value={category}
-                                >
-                                    {category}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="surface-negative rounded-2xl p-3">
-                            <p className="text-subtle">{UI_TEXT.expenses}</p>
-                            <p className="report-metric-value tone-negative tabular-nums">
-                                <CurrencyAmount
-                                    amount={reportSummary.expenses}
-                                    variant="compact"
-                                    valueClassName="tabular-nums"
-                                />
-                            </p>
+                            <span
+                                className="cash-flow-fill"
+                                style={{width: `${cashFlowProgress}%`}}
+                            />
                         </div>
 
-                        <div className="surface-subtle rounded-2xl p-3">
-                            <p className="text-subtle">{UI_TEXT.transactions}</p>
-                            <p className="report-metric-value tabular-nums">
-                                {reportTransactions.length.toLocaleString()}
-                            </p>
-                        </div>
+                        <p className={`cash-flow-caption ${spentPercentage > 100 ? 'tone-negative' : 'text-subtle'}`}>
+                            {dashboard.income > 0
+                                ? `${numberFormatter.format(spentPercentage)}% of income spent`
+                                : dashboard.expenses > 0
+                                    ? 'Expenses recorded with no income in this period'
+                                    : 'Add income and expenses to track cash flow'}
+                        </p>
                     </div>
+                </div>
 
-                    <div
-                        className="mt-6 border-t pt-6"
-                        style={{borderColor: 'var(--app-border)'}}
-                    >
-                        <h3 className="section-title mb-4">
-                            {selectedCategory === 'ALL'
-                                ? UI_TEXT.recentTransactions
-                                : selectedCategory}
-                        </h3>
+                <div className="surface-card rounded-3xl p-6 transition-colors">
 
+                    <h2 className="section-title mb-4">
+                        {selectedCategory === 'ALL' ? UI_TEXT.recentTransactions : selectedCategory}
+                    </h2>
+
+                    {transactionsLoading && (
+                        <div className="empty-state" role="status">
+                            <p className="text-muted">{UI_TEXT.loadingTransactions}</p>
+                        </div>
+                    )}
+
+                    {!transactionsLoading && transactionsError && (
+                        <div className="empty-state" role="alert">
+                            <p className="text-body font-medium">{UI_TEXT.transactionsError}</p>
+                            <button type="button" className="empty-state-action" onClick={() => loadTransactions(selectedMonth)}>
+                                {UI_TEXT.retry}
+                            </button>
+                        </div>
+                    )}
+
+                    {!transactionsLoading && !transactionsError && reportTransactions.length === 0 && (
+                        <div className="empty-state">
+                            <p className="text-body font-medium">
+                                {transactions.length === 0 ? UI_TEXT.noTransactions : UI_TEXT.noTransactionsForCategory}
+                            </p>
+                            <p className="text-muted mt-1">{UI_TEXT.noTransactionsHelp}</p>
+                            <button type="button" className="empty-state-action" onClick={openSmsModalWithClipboard}>
+                                {UI_TEXT.addTransaction}
+                            </button>
+                        </div>
+                    )}
+
+                    {!transactionsLoading && !transactionsError && reportTransactions.length > 0 && (
                         <div className="recent-transactions-list space-y-3">
-
                             {reportTransactions.map(transaction => (
-
                                 <div
                                     key={transaction.id}
                                     className="recent-transaction-item flex items-center justify-between gap-4 border-b pb-3"
                                     style={{borderColor: 'var(--app-border)'}}
                                 >
-
                                     <div className="min-w-0">
                                         <p className="text-body font-medium">
                                             {transaction.merchant || transaction.category}
@@ -824,7 +786,7 @@ function App() {
 
                                         <p className="text-subtle mt-1">
                                             {new Date(transaction.transactionDate)
-                                                .toLocaleString()}
+                                                .toLocaleString('en-LK')}
                                         </p>
                                     </div>
 
@@ -863,19 +825,84 @@ function App() {
                                             </button>
                                         </div>
                                     </div>
-
                                 </div>
                             ))}
-
-                            {reportTransactions.length === 0 && (
-                                <p className="text-muted py-6 text-center">
-                                    {UI_TEXT.noTransactionsForCategory}
-                                </p>
-                            )}
-
                         </div>
+                    )}
+
+                </div>
+
+                <div className="surface-card rounded-3xl p-6 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
+                            <p className="text-muted mt-1">{UI_TEXT.categoryReport}</p>
+                        </div>
+                        <span className="text-subtle shrink-0 tabular-nums">
+                            {numberFormatter.format(reportTransactions.length)} {UI_TEXT.transactions.toLowerCase()}
+                        </span>
                     </div>
 
+                    <label className="field-label mt-4 block" htmlFor="category-filter">
+                        {UI_TEXT.category}
+                    </label>
+                    <select
+                        id="category-filter"
+                        className="field-control mt-1"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                        <option value="ALL">{UI_TEXT.allCategories}</option>
+                        {REPORT_CATEGORIES.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
+                    </select>
+
+                    {!transactionsLoading && !transactionsError && chartData.length > 0 ? (
+                        <div className="mt-4 flex flex-col items-center gap-4">
+                            <div className="category-chart w-full max-w-sm">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={82}>
+                                            {chartData.map((entry, index) => (
+                                                <Cell key={entry.name} fill={colors[index % colors.length]}/>
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={tooltipStyle}
+                                            itemStyle={{color: isDarkMode ? '#e2e8f0' : '#0f172a'}}
+                                            formatter={(value) => [`LKR ${formatLkrValue(value)}`, 'Amount']}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            <div className="category-legend">
+                                {chartData.map((entry, index) => (
+                                    <div key={entry.name} className="category-legend-item">
+                                        <span
+                                            className="h-3 w-3 shrink-0 rounded-full"
+                                            style={{backgroundColor: colors[index % colors.length]}}
+                                        />
+                                        <span className="min-w-0">
+                                            <span className="text-body block truncate">{entry.name}</span>
+                                            <span className="text-subtle tabular-nums">
+                                                LKR {formatLkrValue(entry.value)}
+                                            </span>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : !transactionsLoading && !transactionsError && (
+                        <div className="empty-state mt-4">
+                            <p className="text-body font-medium">{UI_TEXT.noCategorySpending}</p>
+                            <p className="text-muted mt-1">{UI_TEXT.noTransactionsHelp}</p>
+                            <button type="button" className="empty-state-action" onClick={openSmsModalWithClipboard}>
+                                {UI_TEXT.addTransaction}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
             </div>
