@@ -45,7 +45,6 @@ const UI_TEXT = {
     spendingByCategory: 'Spending by Category',
     allCategories: 'All Categories',
     transactions: 'Transactions',
-    recentTransactions: 'Recent Transactions',
     changes: 'What Changed',
     forecast: 'Forecast',
     watchout: 'Watch Out',
@@ -735,7 +734,7 @@ function App() {
 
                 <div className="surface-card rounded-3xl p-6 transition-colors">
 
-                    <h2 className="section-title">{UI_TEXT.recentTransactions}</h2>
+                    <h2 className="section-title">{UI_TEXT.transactions}</h2>
 
                     <label className="field-label mt-4 block" htmlFor="category-filter">
                         {UI_TEXT.category}
