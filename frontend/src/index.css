@@ -114,6 +114,20 @@ html.dark body {
     box-shadow: var(--app-shadow);
 }
 
+.reporting-context {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.25rem 0.25rem 0.5rem;
+}
+
+.reporting-context-range {
+    margin-top: 0.125rem;
+    font-weight: 600;
+}
+
 .overview-balance-card {
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
@@ -469,6 +483,51 @@ html.dark body {
 
 .expense-comparison-chart {
     height: 16rem;
+}
+
+.chart-carousel {
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.chart-carousel-track {
+    display: flex;
+    width: 200%;
+    align-items: flex-start;
+    transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.chart-carousel-slide {
+    width: 50%;
+    min-width: 0;
+    padding-inline: 0.125rem;
+}
+
+.chart-carousel-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.chart-carousel-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--app-border-strong);
+    transition: width 200ms ease, background-color 200ms ease;
+}
+
+.chart-carousel-dot.is-active {
+    width: 1.5rem;
+    background: var(--app-chart-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chart-carousel-track {
+        transition: none;
+    }
 }
 
 .category-legend {

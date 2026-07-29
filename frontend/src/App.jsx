@@ -1,7 +1,6 @@
 import {useEffect, useState} from 'react'
 import api from './api'
 import {
-    CartesianGrid,
     Cell,
     Legend,
     Line,
@@ -10,8 +9,6 @@ import {
     PieChart,
     ResponsiveContainer,
     Tooltip,
-    XAxis,
-    YAxis,
 } from 'recharts'
 
 const CATEGORIES = [
@@ -352,6 +349,10 @@ function App() {
 
     const [comparisonError, setComparisonError] = useState(false)
 
+    const [chartSlide, setChartSlide] = useState(0)
+
+    const [chartTouchStart, setChartTouchStart] = useState(null)
+
     useEffect(() => {
         loadTransactions(selectedMonth)
         loadPreviousTransactions(selectedMonth)
@@ -364,6 +365,21 @@ function App() {
 
         loadMonthInsight(selectedMonth)
     }, [activeView, selectedMonth])
+
+    useEffect(() => {
+        if (
+            activeView !== 'overview'
+            || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+            return undefined
+        }
+
+        const interval = window.setInterval(() => {
+            setChartSlide(currentSlide => currentSlide === 0 ? 1 : 0)
+        }, 7000)
+
+        return () => window.clearInterval(interval)
+    }, [activeView, chartSlide])
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -643,6 +659,20 @@ function App() {
     const cashFlowProgress = Math.min(spentPercentage, 100)
     const cashFlowToneClass = spentPercentage > 100 ? 'is-over' : ''
 
+    const finishChartSwipe = (touchEnd) => {
+        if (chartTouchStart === null) {
+            return
+        }
+
+        const distance = chartTouchStart - touchEnd
+
+        if (Math.abs(distance) > 40) {
+            setChartSlide(distance > 0 ? 1 : 0)
+        }
+
+        setChartTouchStart(null)
+    }
+
     const openSmsModal = () => {
         setIsSmsModalOpen(true)
     }
@@ -696,6 +726,51 @@ function App() {
 
             <div className="max-w-xl mx-auto space-y-4">
 
+                <div className="reporting-context">
+                    <div className="min-w-0">
+                        <p className="text-subtle">{UI_TEXT.reportingPeriod}</p>
+                        <p className="text-body reporting-context-range">
+                            {formatDateRange(selectedDateRange)}
+                        </p>
+                    </div>
+
+                    <label className="relative block h-10 w-10 shrink-0">
+                        <span
+                            aria-label="Select month"
+                            title="Select month"
+                            className="surface-subtle text-muted flex h-10 w-10 items-center justify-center rounded-xl"
+                        >
+                            <svg
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M8 2v4"/>
+                                <path d="M16 2v4"/>
+                                <path d="M3 10h18"/>
+                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            </svg>
+                        </span>
+
+                        <input
+                            type="month"
+                            aria-label="Month"
+                            className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
+                            value={selectedMonth}
+                            onChange={(event) => {
+                                if (event.target.value) {
+                                    setSelectedMonth(event.target.value)
+                                }
+                            }}
+                        />
+                    </label>
+                </div>
+
                 {activeView === 'overview' && (
                 <div className="surface-card overview-balance-card rounded-3xl p-6 transition-colors">
                     <div className="flex items-start justify-between gap-3">
@@ -724,41 +799,6 @@ function App() {
                                 </svg>
                             </button>
 
-                            <label className="relative block h-10 w-10 shrink-0">
-                                <span
-                                    aria-label="Select month"
-                                    title="Select month"
-                                    className="surface-subtle text-muted flex h-10 w-10 items-center justify-center rounded-xl"
-                                >
-                                    <svg
-                                        aria-hidden="true"
-                                        viewBox="0 0 24 24"
-                                        className="h-5 w-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="M8 2v4"/>
-                                        <path d="M16 2v4"/>
-                                        <path d="M3 10h18"/>
-                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                                    </svg>
-                                </span>
-
-                                <input
-                                    type="month"
-                                    aria-label="Month"
-                                    className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
-                                    value={selectedMonth}
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            setSelectedMonth(e.target.value)
-                                        }
-                                    }}
-                                />
-                            </label>
                         </div>
                     </div>
 
@@ -767,10 +807,6 @@ function App() {
                             amount={dashboard.remaining}
                             valueClassName="tabular-nums"
                         />
-                    </p>
-
-                    <p className="text-muted mt-2">
-                        {UI_TEXT.reportingPeriod}: {formatDateRange(selectedDateRange)}
                     </p>
 
                     <div className="cash-flow-summary mt-5">
@@ -929,8 +965,22 @@ function App() {
 
                 {activeView === 'overview' && (
                 <div className="surface-card overview-category-card rounded-3xl p-6 transition-colors">
-                    <section>
+                    <div
+                        className="chart-carousel"
+                        onTouchStart={(event) => setChartTouchStart(event.touches[0].clientX)}
+                        onTouchEnd={(event) => finishChartSwipe(event.changedTouches[0].clientX)}
+                    >
+                    <div
+                        className="chart-carousel-track"
+                        style={{transform: `translateX(-${chartSlide * 50}%)`}}
+                    >
+                    <section
+                        className="chart-carousel-slide"
+                        aria-hidden={chartSlide !== 0}
+                        inert={chartSlide !== 0}
+                    >
                         <h2 className="section-title">{UI_TEXT.expenseComparison}</h2>
+                        <p className="text-muted mt-1">Cumulative spending by reporting-period day</p>
 
                         {(comparisonLoading || transactionsLoading) && (
                             <div className="empty-state mt-4" role="status">
@@ -961,21 +1011,7 @@ function App() {
                             && hasExpenseComparisonData && (
                             <div className="expense-comparison-chart mt-4">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={expenseComparisonData} margin={{top: 8, right: 8, left: -16, bottom: 0}}>
-                                        <CartesianGrid stroke="var(--app-border)" strokeDasharray="3 3"/>
-                                        <XAxis
-                                            dataKey="day"
-                                            tick={{fill: 'var(--app-text-subtle)', fontSize: 11}}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            label={{value: 'Reporting period day', position: 'insideBottom', offset: -2}}
-                                        />
-                                        <YAxis
-                                            tick={{fill: 'var(--app-text-subtle)', fontSize: 11}}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            tickFormatter={(value) => numberFormatter.format(value)}
-                                        />
+                                    <LineChart data={expenseComparisonData} margin={{top: 12, right: 12, left: 12, bottom: 8}}>
                                         <Tooltip
                                             contentStyle={tooltipStyle}
                                             formatter={(value, name) => [
@@ -992,16 +1028,18 @@ function App() {
                                         <Line
                                             type="monotone"
                                             dataKey="previous"
-                                            stroke="var(--app-text-subtle)"
-                                            strokeWidth={2}
+                                            stroke="var(--app-chart-2)"
+                                            strokeWidth={3}
                                             dot={false}
+                                            activeDot={{r: 5, strokeWidth: 0}}
                                         />
                                         <Line
                                             type="monotone"
                                             dataKey="current"
-                                            stroke="var(--app-negative)"
+                                            stroke="var(--app-chart-1)"
                                             strokeWidth={3}
                                             dot={false}
+                                            activeDot={{r: 5, strokeWidth: 0}}
                                             connectNulls={false}
                                         />
                                     </LineChart>
@@ -1028,8 +1066,13 @@ function App() {
                         )}
                     </section>
 
-                    <section className="mt-6 border-t pt-6" style={{borderColor: 'var(--app-border)'}}>
+                    <section
+                        className="chart-carousel-slide"
+                        aria-hidden={chartSlide !== 1}
+                        inert={chartSlide !== 1}
+                    >
                     <h2 className="section-title">{UI_TEXT.spendingByCategory}</h2>
+                    <p className="text-muted mt-1">Expense share across categories</p>
 
                     {transactionsLoading && (
                         <div className="empty-state mt-4" role="status">
@@ -1096,6 +1139,21 @@ function App() {
                         </div>
                     )}
                     </section>
+                    </div>
+                    </div>
+
+                    <div className="chart-carousel-controls" aria-label="Chart selection">
+                        {[UI_TEXT.expenseComparison, UI_TEXT.spendingByCategory].map((label, index) => (
+                            <button
+                                key={label}
+                                type="button"
+                                className={`chart-carousel-dot ${chartSlide === index ? 'is-active' : ''}`.trim()}
+                                aria-label={`Show ${label}`}
+                                aria-pressed={chartSlide === index}
+                                onClick={() => setChartSlide(index)}
+                            />
+                        ))}
+                    </div>
                 </div>
                 )}
 
@@ -1272,9 +1330,6 @@ function App() {
                                 <h2 className="section-title">
                                     {UI_TEXT.monthInsight}
                                 </h2>
-                                <p className="text-muted mt-1">
-                                    {formatDateRange(selectedDateRange)}
-                                </p>
                             </div>
                         </div>
 
