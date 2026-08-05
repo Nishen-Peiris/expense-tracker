@@ -50,10 +50,9 @@ test('390px mobile flow keeps actions contextual and updates totals',async({page
   expect(clear.y+clear.height).toBeLessThanOrEqual(nav.y);
 });
 
-test('global search, quick add, reports, and assistant are functional',async({page})=>{
+test('quick add, reports, and assistant are functional',async({page})=>{
   await page.setViewportSize({width:1024,height:900});await mockData(page);await page.goto('/#/overview');
-  await page.locator('#global-search').fill('Cafe');
-  await expect(page.locator('.global-results')).toContainText('Cafe');
+  await expect(page.locator('#global-search')).toHaveCount(0);
   await page.locator('.quick-add > summary').click();
   await page.locator('.quick-add button[data-transaction-type="income"]').click();
   await expect(page.locator('select[name="type"]')).toHaveValue('income');
