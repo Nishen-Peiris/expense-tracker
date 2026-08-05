@@ -1,6 +1,6 @@
-# Expense Tracker
+# Quiet Ledger
 
-Monorepo for the Expense Tracker application.
+Quiet Ledger is the next version of the personal expense tracker, combining transaction history with accounts, budgets, bills, goals, investments, net worth, reports, and banking-SMS entry.
 
 ## Structure
 
