@@ -1,6 +1,15 @@
 import { demoData, emptyData } from './seed.js';
 
 const LEGACY_KEY = 'harbor-finance-data-v1';
+export const uniqueId = () => {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (typeof globalThis.crypto?.getRandomValues === 'function') globalThis.crypto.getRandomValues(bytes);
+  else for (let index=0;index<bytes.length;index+=1) bytes[index]=Math.floor(Math.random()*256);
+  bytes[6]=(bytes[6]&15)|64; bytes[8]=(bytes[8]&63)|128;
+  const hex=[...bytes].map((value)=>value.toString(16).padStart(2,'0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+};
 const remoteTransport = {
   async get() {
     const response = await fetch('/api/data', { headers:{ Accept:'application/json', 'X-User-Id':'local-user' } });
@@ -32,7 +41,7 @@ export class FinanceRepository {
   flush() { return this.pending; }
   subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   list(resource) { return this.cache?.[resource] || []; }
-  create(resource, values) { const record = { ...values, id: `${resource.slice(0,4)}-${crypto.randomUUID()}` }; this.cache[resource] = [...(this.cache[resource] || []), record]; this.save(this.cache); return record; }
+  create(resource, values) { const record = { ...values, id: `${resource.slice(0,4)}-${uniqueId()}` }; this.cache[resource] = [...(this.cache[resource] || []), record]; this.save(this.cache); return record; }
   update(resource, id, values) { const index = (this.cache[resource] || []).findIndex((item) => item.id === id); if (index < 0) throw new Error('Record not found'); this.cache[resource][index] = { ...this.cache[resource][index], ...values, id }; this.save(this.cache); return this.cache[resource][index]; }
   remove(resource, id) { const before = (this.cache[resource] || []).length; this.cache[resource] = (this.cache[resource] || []).filter((item) => item.id !== id); if (before === this.cache[resource].length) throw new Error('Record not found'); this.save(this.cache); }
   replace(data) { if (!data || data.version !== 1 || !data.settings) throw new Error('This backup is not valid'); this.save(data); return data; }
