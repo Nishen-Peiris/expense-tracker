@@ -25,7 +25,7 @@ const routes = [
 ];
 const esc = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[char]));
 const get = (resource, id) => data[resource]?.find((item) => item.id === id);
-const fmt = (minor, currency = data.settings.primaryCurrency) => new Intl.NumberFormat(data.settings.locale, { style:'currency', currency, maximumFractionDigits: 0 }).format(Number(minor) / 100);
+const fmt = (minor, currency = data.settings.primaryCurrency) => new Intl.NumberFormat(data.settings.locale, { style:'currency', currency, currencyDisplay:'narrowSymbol', maximumFractionDigits: 0 }).format(Number(minor) / 100);
 const amt = (value, currency) => fmt(money(value), currency);
 const pct = (basisPoints) => `${(Number(basisPoints) / 100).toFixed(1)}%`;
 const title = (route) => routes.find(([key]) => key === route)?.[1] || (route === 'assistant' ? 'AI assistant' : 'Overview');
