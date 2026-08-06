@@ -32,22 +32,35 @@ for (const width of [320,375,390,430,768,1024]) {
 
 test('390px mobile flow keeps actions contextual and updates totals',async({page})=>{
   await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/overview');
-  await expect(page.locator('.mobile-nav')).toBeVisible();
-  await page.locator('.mobile-nav a[href="#/transactions"]').click();
+  await expect(page.locator('.mobile-header')).toBeVisible();
+  await page.locator('.mobile-menu > summary').click();
+  await page.locator('.mobile-menu a[href="#/transactions"]').click();
   await expect(page.locator('summary', {hasText:'Add transaction'})).toHaveCount(1);
   await expect(page.locator('.transactions-card thead')).toBeHidden();
+  await expect(page.locator('.transaction-mobile-meta').first()).toBeVisible();
+  await expect(page.locator('.transactions-card tr').first()).toHaveCSS('border-radius','0px');
   await page.locator('tr', {hasText:'Lunch'}).locator('.overflow-menu > summary').click();
   await page.locator('button[data-edit="transactions"][data-id="tran-expense"]').click();
   await page.locator('input[name="amount"]').fill('300.00');
   await page.locator('#entity-form button[type="submit"]').click();
-  await page.locator('.mobile-nav a[href="#/overview"]').click();
+  await page.locator('.mobile-menu > summary').click();
+  await page.locator('.mobile-menu a[href="#/overview"]').click();
   await expect(page.getByText('Monthly Expenses').locator('..').getByText('$300')).toBeVisible();
-  await page.locator('.mobile-nav a[href="#/settings"]').click();
+  await page.locator('.mobile-menu > summary').click();
+  await page.locator('.mobile-menu a[href="#/settings"]').click();
   await expect(page.locator('#period-month')).toHaveCount(0);
   await expect(page.locator('summary', {hasText:'Add transaction'})).toHaveCount(0);
   await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
-  const clear=await page.locator('button[data-action="clear"]').boundingBox(),nav=await page.locator('.mobile-nav').boundingBox();
-  expect(clear.y+clear.height).toBeLessThanOrEqual(nav.y);
+  const clear=await page.locator('button[data-action="clear"]').boundingBox();
+  expect(clear.y+clear.height).toBeLessThanOrEqual(page.viewportSize().height);
+});
+
+test('mobile menu exposes every page without crowded labels',async({page})=>{
+  await page.setViewportSize({width:320,height:700});await mockData(page);await page.goto('/#/overview');
+  await page.locator('.mobile-menu > summary').click();
+  await expect(page.locator('.mobile-menu nav a')).toHaveCount(13);
+  await expect(page.locator('.mobile-menu a[href="#/assistant"]')).toBeVisible();
+  await expect(page.locator('.mobile-menu a[href="#/loans"]')).toBeVisible();
 });
 
 test('quick add, reports, and assistant are functional',async({page})=>{
