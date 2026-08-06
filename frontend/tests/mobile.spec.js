@@ -45,7 +45,7 @@ test('390px mobile flow keeps actions contextual and updates totals',async({page
   await page.locator('#entity-form button[type="submit"]').click();
   await page.locator('.mobile-menu > summary').click();
   await page.locator('.mobile-menu a[href="#/overview"]').click();
-  await expect(page.getByText('Monthly Expenses').locator('..').getByText('$300')).toBeVisible();
+  await expect(page.getByText('Monthly expenses').locator('..').getByText('$300')).toBeVisible();
   await page.locator('.mobile-menu > summary').click();
   await page.locator('.mobile-menu a[href="#/settings"]').click();
   await expect(page.locator('#period-month')).toHaveCount(0);
@@ -68,7 +68,10 @@ test('simplified chrome integrates the period and uses bank-card proportions',as
   await expect(page.locator('.topbar .eyebrow')).toHaveCount(0);
   await expect(page.locator('.period-context')).toHaveCount(0);
   await expect(page.locator('.month-control')).toContainText('August 2026');
-  await expect(page.locator('.month-control')).toContainText('Aug 1, 2026 – Aug 31, 2026');
+  await expect(page.locator('.month-control')).toContainText('Aug 1–31');
+  const picker=await page.locator('.period-picker').boundingBox(),addTransaction=await page.locator('.action-menu > summary').boundingBox();
+  expect(picker.height).toBe(addTransaction.height);
+  expect(picker.width).toBeLessThan(220);
   await page.goto('/#/accounts');
   const card=await page.locator('.account-card').first().boundingBox();
   expect(card.width/card.height).toBeCloseTo(1.586,1);
@@ -76,6 +79,91 @@ test('simplified chrome integrates the period and uses bank-card proportions',as
     await page.goto(`/#/${path}`);
     await expect(page.getByText(/^(Import|Export|Print)/)).toHaveCount(0);
   }
+});
+
+test('overview hides empty previews and standardizes navigation',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/overview');
+  await expect(page.getByRole('heading',{name:'Goals',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Upcoming bills'})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Spending by category'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Budget progress'})).toBeVisible();
+  await expect(page.locator('.overview-preview-grid a')).toHaveText(['View all','View all']);
+  await expect(page.locator('#page .section-head a.button')).toHaveCount(0);
+  await expect(page.locator('#page .overview-view-all')).toHaveCount(3);
+  await expect(page.locator('#page').getByText(/^(See all|Manage|View report)$/)).toHaveCount(0);
+});
+
+test('overview previews show no more than two items per card',async({page})=>{
+  const state=fixture();
+  for(let index=0;index<3;index+=1){
+    const categoryId=`cat-extra-${index}`;
+    state.categories.push({id:categoryId,name:`Category ${index}`,type:'expense',color:'#635bff',icon:'-'});
+    state.transactions.push({id:`tran-extra-${index}`,date:'2026-08-03',description:`Expense ${index}`,merchant:`Merchant ${index}`,amount:'25.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId,status:'cleared'});
+    state.budgets.push({id:`budget-extra-${index}`,categoryId,amount:'50.00',period:'2026-08',method:'standard',warning:80});
+    state.goals.push({id:`goal-${index}`,name:`Goal ${index}`,target:'1000.00',current:'100.00',monthly:'50.00',priority:'medium',color:'#635bff',icon:'G',archived:false});
+    state.bills.push({id:`bill-${index}`,name:`Bill ${index}`,amount:'20.00',currency:'USD',frequency:'monthly',dueDate:'2026-08-20',autopay:false,paid:false});
+  }
+  state.transactions.push({id:'tran-uncategorized',date:'2026-08-04',description:'Uncategorized',merchant:'Unknown',amount:'10.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId:'',status:'cleared'});
+  await page.setViewportSize({width:768,height:900});await mockData(page,state);await page.goto('/#/overview');
+  const cardFor=(heading)=>page.locator('.card').filter({has:page.getByRole('heading',{name:heading,exact:true})});
+  await expect(cardFor('Financial insights').locator('.insight')).toHaveCount(2);
+  await expect(cardFor('Spending by category').locator('.category-row')).toHaveCount(2);
+  await expect(cardFor('Budget progress').locator('.budget-row')).toHaveCount(2);
+  await expect(cardFor('Goals').locator('.goal-item')).toHaveCount(2);
+  await expect(cardFor('Upcoming bills').locator('.bill-item')).toHaveCount(2);
+  await expect(cardFor('Upcoming bills').locator('.badge,[data-action="pay-bill"]')).toHaveCount(0);
+  await expect(page.locator('.overview-preview-grid .avatar,.overview-preview-grid .overview-item-title i')).toHaveCount(0);
+  await expect(cardFor('Cash flow').getByText(/^(Cleared income|Cleared expenses|After income and expenses)$/)).toHaveCount(0);
+  await expect(cardFor('Cash flow').getByText(/\w+ \d{1,2} – \w+ \d{1,2}/)).toHaveCount(0);
+  await expect(cardFor('Financial insights').getByText('Based on your actual records')).toHaveCount(0);
+  await expect(page.locator('.overview-card-grid .overview-card-description')).toHaveText([
+    'Income, spending, and remaining balance','Highlights from your financial activity','Where your money went this period','How spending compares with your plan','Progress toward your savings targets','Payments coming up next'
+  ]);
+  await expect(page.locator('.overview-card-grid .item-meta,.overview-card-grid .insight p')).toHaveCount(0);
+  for(const item of await page.locator('.overview-card-grid :is(.overview-progress-row,.list-row)').all()){
+    expect(await item.evaluate((node)=>getComputedStyle(node).borderBottomWidth)).toBe('0px');
+  }
+  await expect(page.locator('.overview-preview-grid a')).toHaveText(['View all','View all','View all','View all']);
+  const progressRows=page.locator('.overview-progress-row');
+  for(let index=0;index<await progressRows.count();index+=1){
+    const row=await progressRows.nth(index).boundingBox(),bar=await progressRows.nth(index).locator('.bar').boundingBox();
+    expect(bar.height).toBe(8);
+    expect(bar.x).toBeCloseTo(row.x,0);
+    expect(bar.width).toBeCloseTo(row.width,0);
+  }
+  await expect(cardFor('Cash flow').locator('.cash-flow-progress-row')).toHaveCount(3);
+});
+
+test('overview cards use equal-width desktop columns',async({page})=>{
+  const state=fixture();
+  state.goals.push({id:'desktop-goal',name:'Desktop goal',target:'1000.00',current:'100.00',monthly:'50.00',priority:'medium',color:'#635bff',icon:'G',archived:false});
+  state.bills.push({id:'desktop-bill',name:'Desktop bill',amount:'20.00',currency:'USD',frequency:'monthly',dueDate:'2026-08-20',autopay:false,paid:false});
+  await page.setViewportSize({width:1440,height:1000});await mockData(page,state);await page.goto('/#/overview');
+  for(const grid of await page.locator('.overview-card-grid').all()){
+    const cards=grid.locator(':scope > .card');
+    if(await cards.count()>1){
+      const first=await cards.nth(0).boundingBox(),second=await cards.nth(1).boundingBox();
+      expect(first.width).toBeCloseTo(second.width,0);
+    }
+  }
+});
+
+test('settings control each Overview preview limit',async({page})=>{
+  const state=fixture();
+  for(let index=0;index<2;index+=1){
+    const categoryId=`limit-category-${index}`;
+    state.categories.push({id:categoryId,name:`Limit category ${index}`,type:'expense',color:'#635bff',icon:'-'});
+    state.transactions.push({id:`limit-transaction-${index}`,date:'2026-08-05',description:'Expense',merchant:'Merchant',amount:'10.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId,status:'cleared'});
+    state.budgets.push({id:`limit-budget-${index}`,categoryId,amount:'20.00',period:'2026-08',method:'standard',warning:80});
+  }
+  await page.setViewportSize({width:768,height:900});await mockData(page,state);await page.goto('/#/settings');
+  await page.locator('[name="overviewSpendingLimit"]').fill('3');
+  await page.locator('[name="overviewBudgetsLimit"]').fill('1');
+  await page.getByRole('button',{name:'Save preferences'}).click();
+  await page.goto('/#/overview');
+  const cardFor=(heading)=>page.locator('.card').filter({has:page.getByRole('heading',{name:heading,exact:true})});
+  await expect(cardFor('Spending by category').locator('.category-row')).toHaveCount(3);
+  await expect(cardFor('Budget progress').locator('.budget-row')).toHaveCount(1);
 });
 
 test('list pages share the same compact mobile surface',async({page})=>{
