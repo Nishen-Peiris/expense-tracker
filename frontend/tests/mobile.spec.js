@@ -74,7 +74,18 @@ test('simplified chrome integrates the period and uses bank-card proportions',as
   expect(picker.width).toBeLessThan(220);
   await page.goto('/#/accounts');
   const card=await page.locator('.account-card').first().boundingBox();
-  expect(card.width/card.height).toBeCloseTo(1.586,1);
+  expect(card.width/card.height).toBeCloseTo(1.78,1);
+  await expect(page.locator('.account-section > .section-head h2').first()).toHaveCSS('font-size','21.6px');
+  const logo=await page.locator('.account-card .account-logo').first().boundingBox(),identity=await page.locator('.account-card .account-identity h3').first().boundingBox();
+  expect(identity.x).toBeGreaterThan(logo.x+logo.width);
+  await expect(page.locator('[data-list-sort="accounts"]')).toHaveCount(0);
+  const assetsHeading=await page.getByRole('heading',{name:'Assets',exact:true}).boundingBox(),assetsTotal=await page.locator('.account-section-head > strong').first().boundingBox();
+  expect(assetsTotal.x-assetsHeading.x-assetsHeading.width).toBeLessThan(20);
+  await expect(page.locator('.account-card').first().getByText('Current balance')).toHaveCount(0);
+  await expect(page.locator('.account-card').first().getByText(/Last updated/)).toHaveCount(0);
+  const accountCard=await page.locator('.account-card').first().boundingBox(),balance=await page.locator('.account-card-balance strong').first().boundingBox();
+  expect(balance.x+balance.width/2).toBeCloseTo(accountCard.x+accountCard.width/2,0);
+  expect(balance.y+balance.height/2).toBeCloseTo(accountCard.y+accountCard.height/2,0);
   for(const path of ['transactions','reports','settings']){
     await page.goto(`/#/${path}`);
     await expect(page.getByText(/^(Import|Export|Print)/)).toHaveCount(0);
@@ -91,6 +102,14 @@ test('overview hides empty previews and standardizes navigation',async({page})=>
   await expect(page.locator('#page .section-head a.button')).toHaveCount(0);
   await expect(page.locator('#page .overview-view-all')).toHaveCount(3);
   await expect(page.locator('#page').getByText(/^(See all|Manage|View report)$/)).toHaveCount(0);
+});
+
+test('accounts hide empty asset and liability sections',async({page})=>{
+  const state=fixture();
+  state.accounts=state.accounts.filter((account)=>account.group==='asset');
+  await mockData(page,state);await page.goto('/#/accounts');
+  await expect(page.getByRole('heading',{name:'Assets',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Liabilities',exact:true})).toHaveCount(0);
 });
 
 test('overview previews show no more than two items per card',async({page})=>{
@@ -176,8 +195,27 @@ test('list pages share the same compact mobile surface',async({page})=>{
     await expect(page.locator('[data-list-sort]')).toBeVisible();
   }
   await page.goto('/#/budget');
-  await expect(page.locator('.pagination')).toBeVisible();
-  await expect(page.locator('[data-list-page-size]')).toHaveValue('10');
+  await expect(page.locator('#budget-search')).toHaveCount(0);
+  await expect(page.locator('.budget-card table')).toBeVisible();
+  await expect(page.locator('.budget-card .pagination')).toHaveCount(0);
+  await expect(page.locator('.budget-card thead')).toBeHidden();
+  await expect(page.locator('.budget-mobile-meta').first()).toBeVisible();
+});
+
+test('transactions scroll without pagination and search keeps focus',async({page})=>{
+  const state=fixture();
+  for(let index=0;index<30;index+=1)state.transactions.push({id:`scroll-${index}`,date:'2026-08-03',description:`Scrollable ${index}`,merchant:`Merchant ${index}`,amount:'25.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId:'cat-food',status:'cleared'});
+  await page.setViewportSize({width:1280,height:720});await mockData(page,state);await page.goto('/#/transactions');
+  await expect(page.locator('.transactions-card .pagination')).toHaveCount(0);
+  await expect(page.locator('.transactions-card tbody tr')).toHaveCount(32);
+  const tableWrap=page.locator('.transactions-card .table-wrap');
+  expect(await tableWrap.evaluate((node)=>node.scrollHeight>node.clientHeight)).toBe(true);
+  await expect(page.locator('.transactions-card td.amount').first()).toHaveCSS('text-align','left');
+  const searchBox=page.locator('#search');
+  await searchBox.pressSequentially('Lunch');
+  await expect(searchBox).toBeFocused();
+  await expect(searchBox).toHaveValue('Lunch');
+  await expect(page.locator('.transactions-card tbody tr')).toHaveCount(1);
 });
 
 test('budget generator uses historical category spending',async({page})=>{
@@ -195,7 +233,7 @@ test('budget generator can analyse a full year of expense history',async({page})
   state.budgets=[];
   state.transactions=Array.from({length:12},(_,index)=>{const date=new Date(Date.UTC(2025,8+index,2)).toISOString().slice(0,10);return {id:`expense-${index}`,date,description:'Groceries',merchant:'Market',amount:'100.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId:'cat-food',status:'cleared'};});
   await page.setViewportSize({width:390,height:844});await mockData(page,state);await page.goto('/#/budget');
-  await expect(page.locator('.smart-budget-toolbar')).toContainText('up to 12 completed periods');
+  await expect(page.locator('.budget-toolbar')).toContainText('up to 12 completed periods');
   await page.locator('#period-month').fill('2026-09');
   await page.locator('#period-month').press('Tab');
   await page.locator('[data-action="generate-budget"]').click();
