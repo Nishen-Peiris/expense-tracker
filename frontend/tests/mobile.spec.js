@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const fixture = () => ({
   version:1,
-  settings:{primaryCurrency:'USD',currencies:['USD'],rates:{USD:'1'},locale:'en-US',monthStart:1,theme:'light',timezone:'UTC',budgetWarning:80,aiEnabled:false},
+  settings:{primaryCurrency:'USD',currencies:['USD'],rates:{USD:'1'},locale:'en-US',monthStart:1,theme:'light',timezone:'UTC',budgetWarning:80,aiEnabled:true,ollamaUrl:'http://192.168.0.133:11434',ollamaModel:'qwen3:4b'},
   accounts:[{id:'acct-1',name:'Everyday',institution:'Test Bank',type:'current',group:'asset',currency:'USD',balance:'800.00',mask:'•••• 1234',color:'#226b54',includeNetWorth:true,archived:false}],
   categories:[{id:'cat-income',name:'Income',type:'income',color:'#226b54',icon:'+'},{id:'cat-food',name:'Food',type:'expense',color:'#b84545',icon:'-'}],
   transactions:[{id:'tran-income',date:'2026-08-01',description:'Salary',merchant:'Employer',amount:'1000.00',currency:'USD',type:'income',accountId:'acct-1',categoryId:'cat-income',status:'cleared'},{id:'tran-expense',date:'2026-08-02',description:'Lunch',merchant:'Cafe',amount:'200.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId:'cat-food',status:'cleared'}],
@@ -12,6 +12,10 @@ const fixture = () => ({
 
 const mockData = async (page,initial=fixture()) => {
   let state=initial;
+  await page.route('**/api/ai/assistant',async(route)=>{
+    const body=route.request().postDataJSON();
+    await route.fulfill({json:{content:String(body.prompt).includes('Evaluate the current financial month')?'Spending remains controlled\n• Savings are positive.':'Ollama answer from qwen3:4b',model:body.model}});
+  });
   await page.route('**/api/data',async(route)=>{
     if(route.request().method()==='PUT'){state=route.request().postDataJSON();await route.fulfill({json:{revision:2,updatedAt:new Date().toISOString()}});return;}
     await route.fulfill({json:state});
@@ -361,5 +365,18 @@ test('quick add, reports, and assistant are functional',async({page})=>{
   await page.goto('/#/assistant');
   await page.locator('#assistant-question').fill('How much can I save?');
   await page.locator('#assistant-form button').click();
-  await expect(page.locator('.assistant-answer')).toContainText('12 months');
+  await expect(page.locator('.assistant-answer')).toContainText('Ollama answer from qwen3:4b');
+});
+
+test('Ollama settings and daily evaluation controls are visible',async({page})=>{
+  await mockData(page);await page.goto('/#/settings');
+  await expect(page.locator('[name="ollamaUrl"]')).toHaveValue('http://192.168.0.133:11434');
+  await expect(page.locator('[name="ollamaModel"]')).toHaveValue('qwen3:4b');
+  await page.goto('/#/assistant');
+  await expect(page.getByText('Scheduled daily from 5:00 AM')).toBeVisible();
+  const request=page.waitForRequest('**/api/ai/assistant');
+  await page.getByRole('button',{name:'Refresh'}).click();
+  await request;
+  await expect(page.locator('.ai-evaluation')).toContainText('Spending remains controlled');
+  await expect(page.locator('.ai-evaluation-card .small.muted')).toContainText('seconds');
 });

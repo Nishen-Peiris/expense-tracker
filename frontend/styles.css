@@ -225,6 +225,8 @@ input[type="checkbox"] { min-height:auto; padding:0; }
 .assistant-input { display:flex; gap:8px; margin-top:7px; }.assistant-input input { flex:1; }
 .assistant-answer { display:grid; grid-template-columns:auto 1fr; gap:10px; margin-top:18px; padding:14px; border-radius:13px; background:var(--panel-2); }
 .assistant-answer p { margin:0; font-size:.84rem; }
+.ai-evaluation { min-height:120px; padding:16px; border-radius:13px; background:var(--panel-2); white-space:pre-line; color:var(--text); font-size:.84rem; line-height:1.7; }
+.ai-evaluation::first-line { font-weight:700; color:var(--heading); }
 .question-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:15px; }
 .question-chips button { padding:7px 9px; border:1px solid var(--line); border-radius:99px; background:var(--panel); color:var(--text); font-size:.7rem; }
 

@@ -3,8 +3,11 @@ package com.nishen.expense.api.controller;
 import com.nishen.expense.api.dto.MonthlyInsightResponse;
 import com.nishen.expense.api.dto.ParsedTransactionResponse;
 import com.nishen.expense.api.dto.SmsParseRequest;
+import com.nishen.expense.api.dto.AssistantRequest;
+import com.nishen.expense.api.dto.AssistantResponse;
 import com.nishen.expense.application.service.LlmService;
 import com.nishen.expense.application.service.MonthlyInsightService;
+import com.nishen.expense.application.service.OllamaAssistantService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,11 +24,19 @@ public class AiController {
 
     private final LlmService llmService;
     private final MonthlyInsightService monthlyInsightService;
+    private final OllamaAssistantService ollamaAssistantService;
 
     public AiController(LlmService llmService,
-                        MonthlyInsightService monthlyInsightService) {
+                        MonthlyInsightService monthlyInsightService,
+                        OllamaAssistantService ollamaAssistantService) {
         this.llmService = llmService;
         this.monthlyInsightService = monthlyInsightService;
+        this.ollamaAssistantService = ollamaAssistantService;
+    }
+
+    @PostMapping("/assistant")
+    public AssistantResponse assistant(@RequestBody AssistantRequest request) {
+        return ollamaAssistantService.ask(request);
     }
 
     @PostMapping("/parse-sms")
