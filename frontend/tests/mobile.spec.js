@@ -63,6 +63,20 @@ test('mobile menu exposes every page without crowded labels',async({page})=>{
   await expect(page.locator('.mobile-menu a[href="#/loans"]')).toBeVisible();
 });
 
+test('list pages share the same compact mobile surface',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/transactions');
+  for(const path of ['transactions','budget','bills','goals','investments']){
+    await page.goto(`/#/${path}`);
+    await expect(page.locator('.list-surface')).toHaveCount(1);
+    await expect(page.locator('.list-surface')).toHaveCSS('border-radius','14px');
+    await expect(page.locator('.list-surface')).toHaveCSS('box-shadow','none');
+    await expect(page.locator('[data-list-sort]')).toBeVisible();
+  }
+  await page.goto('/#/budget');
+  await expect(page.locator('.pagination')).toBeVisible();
+  await expect(page.locator('[data-list-page-size]')).toHaveValue('10');
+});
+
 test('budget generator uses historical category spending',async({page})=>{
   await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/budget');
   await page.locator('#period-month').fill('2026-09');
