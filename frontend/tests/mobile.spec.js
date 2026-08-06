@@ -67,11 +67,15 @@ test('simplified chrome integrates the period and uses bank-card proportions',as
   await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/overview');
   await expect(page.locator('.topbar .eyebrow')).toHaveCount(0);
   await expect(page.locator('.period-context')).toHaveCount(0);
-  await expect(page.locator('.month-control')).toContainText('August 2026');
+  await expect(page.locator('.month-control')).toContainText('Aug 2026');
   await expect(page.locator('.month-control')).toContainText('Aug 1–31');
   const picker=await page.locator('.period-picker').boundingBox(),addTransaction=await page.locator('.action-menu > summary').boundingBox();
   expect(picker.height).toBe(addTransaction.height);
-  expect(picker.width).toBeLessThan(220);
+  expect(picker.width).toBeLessThan(145);
+  await expect(page.locator('#period-month')).toHaveAttribute('type','month');
+  await expect(page.locator('#period-month')).toHaveAttribute('aria-label',/Choose any reporting month/);
+  await page.locator('#period-month').evaluate((input)=>{input.value='2026-06';input.dispatchEvent(new Event('change',{bubbles:true}));});
+  await expect(page.locator('.month-control')).toContainText('Jun 2026');
   await page.goto('/#/accounts');
   const card=await page.locator('.account-card').first().boundingBox();
   expect(card.width/card.height).toBeCloseTo(1.78,1);
@@ -94,6 +98,7 @@ test('simplified chrome integrates the period and uses bank-card proportions',as
 
 test('overview hides empty previews and standardizes navigation',async({page})=>{
   await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/overview');
+  await expect(page.locator('.summary-grid').getByText(/vs prior/)).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Goals',exact:true})).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Upcoming bills'})).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Spending by category'})).toBeVisible();
@@ -241,10 +246,62 @@ test('bills goals and loans share responsive transaction tables',async({page})=>
   }
 });
 
+test('investments keep summaries and use the responsive table layout',async({page})=>{
+  const state=fixture();
+  state.holdings.push({id:'holding-table',name:'Index fund',symbol:'IDX',assetClass:'Fund',quantity:'10.00',averageCost:'100.00',currentPrice:'110.00',currency:'USD',dividends:'12.00'});
+  await page.setViewportSize({width:390,height:844});await mockData(page,state);await page.goto('/#/investments');
+  await expect(page.locator('.summary-grid > .card')).toHaveCount(3);
+  await expect(page.locator('.topbar').getByRole('button',{name:/Add holding/})).toBeVisible();
+  await expect(page.locator('#page').getByRole('button',{name:/Add holding/})).toHaveCount(0);
+  await expect(page.locator('.investments-card table')).toBeVisible();
+  await expect(page.locator('.investments-card thead')).toBeHidden();
+  await expect(page.locator('.investments-card .responsive-mobile-meta')).toBeVisible();
+  await expect(page.locator('.investments-card .pagination')).toHaveCount(0);
+});
+
+test('net worth keeps summaries and uses the responsive table layout',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/net-worth');
+  await expect(page.locator('.summary-grid > .card')).toHaveCount(2);
+  await expect(page.locator('.net-worth-card table')).toBeVisible();
+  await expect(page.locator('.net-worth-card thead')).toBeHidden();
+  await expect(page.locator('.net-worth-card .responsive-mobile-meta')).toBeVisible();
+  await expect(page.locator('.net-worth-card .pagination')).toHaveCount(0);
+  await expect(page.locator('[data-list-sort="netWorth"]')).toBeVisible();
+});
+
 test('calendar keeps only its header add action',async({page})=>{
-  await mockData(page);await page.goto('/#/calendar');
+  await page.setViewportSize({width:390,height:600});await mockData(page);await page.goto('/#/calendar');
   await expect(page.locator('.topbar').getByRole('button',{name:/Add event/})).toBeVisible();
   await expect(page.locator('#page').getByRole('button',{name:/^(Month|Week|Agenda|Event)$/})).toHaveCount(0);
+  const calendar=page.locator('.calendar-scroll');
+  expect(await calendar.evaluate((node)=>node.scrollHeight>node.clientHeight)).toBe(true);
+  await expect(page.locator('.calendar-head').first()).toHaveCSS('position','sticky');
+});
+
+test('due autopay bills post one transaction and advance',async({page})=>{
+  const state=fixture();
+  state.bills.push({id:'autopay-bill',name:'Internet',payee:'Provider',amount:'45.00',currency:'USD',frequency:'monthly',dueDate:'2026-08-05',accountId:'acct-1',categoryId:'cat-food',autopay:true,paid:false,reminder:2});
+  await mockData(page,state);await page.goto('/#/transactions');
+  const posted=page.locator('.transactions-card tr',{hasText:'Provider'});
+  await expect(posted).toHaveCount(1);
+  await expect(posted).toContainText('$45');
+  await page.goto('/#/overview');
+  await page.goto('/#/transactions');
+  await expect(page.locator('.transactions-card tr',{hasText:'Provider'})).toHaveCount(1);
+  await page.goto('/#/bills');
+  await expect(page.locator('.bills-card tr',{hasText:'Internet'})).toContainText('2026-09-05');
+});
+
+test('marking a manual bill paid posts and advances it',async({page})=>{
+  const state=fixture();
+  state.bills.push({id:'manual-bill',name:'Insurance',payee:'Insurer',amount:'80.00',currency:'USD',frequency:'monthly',dueDate:'2026-08-20',accountId:'acct-1',categoryId:'cat-food',autopay:false,paid:false,reminder:2});
+  await mockData(page,state);await page.goto('/#/bills');
+  const billRow=page.locator('.bills-card tr',{hasText:'Insurance'});
+  await billRow.locator('.overflow-menu > summary').click();
+  await billRow.getByRole('menuitem',{name:'Mark paid'}).click();
+  await expect(page.locator('.bills-card tr',{hasText:'Insurance'})).toContainText('2026-09-20');
+  await page.goto('/#/transactions');
+  await expect(page.locator('.transactions-card tr',{hasText:'Insurer'})).toHaveCount(1);
 });
 
 test('budget generator uses historical category spending',async({page})=>{
