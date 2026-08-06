@@ -269,6 +269,25 @@ test('net worth keeps summaries and uses the responsive table layout',async({pag
   await expect(page.locator('[data-list-sort="netWorth"]')).toBeVisible();
 });
 
+test('reports show six recent months and three-item preview cards',async({page})=>{
+  const state=fixture();
+  for(let index=0;index<4;index+=1){
+    const categoryId=`report-category-${index}`;
+    state.categories.push({id:categoryId,name:`Report category ${index}`,type:'expense',color:'#635bff',icon:'R'});
+    state.transactions.push({id:`report-transaction-${index}`,date:'2026-08-05',description:`Report expense ${index}`,merchant:`Report merchant ${index}`,amount:'10.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId,status:'cleared'});
+  }
+  await page.setViewportSize({width:1280,height:800});await mockData(page,state);await page.goto('/#/reports');
+  const trend=page.locator('.trend-chart-scroll');
+  await expect(page.locator('.trend-chart > div')).toHaveCount(12);
+  const dimensions=await trend.evaluate((node)=>({clientWidth:node.clientWidth,scrollWidth:node.scrollWidth,scrollLeft:node.scrollLeft}));
+  expect(dimensions.scrollWidth).toBeGreaterThan(dimensions.clientWidth);
+  expect(dimensions.scrollLeft).toBeGreaterThan(0);
+  for(const reportCard of await page.locator('.report-card').all()){
+    const items=reportCard.locator(':scope > .report-item,:scope > .overview-progress-row');
+    expect(await items.count()).toBeLessThanOrEqual(3);
+  }
+});
+
 test('calendar keeps only its header add action',async({page})=>{
   await page.setViewportSize({width:390,height:600});await mockData(page);await page.goto('/#/calendar');
   await expect(page.locator('.topbar').getByRole('button',{name:/Add event/})).toBeVisible();
@@ -331,6 +350,8 @@ test('quick add, reports, and assistant are functional',async({page})=>{
   await page.setViewportSize({width:1024,height:900});await mockData(page);await page.goto('/#/overview');
   await expect(page.locator('#global-search')).toHaveCount(0);
   await page.locator('.quick-add > summary').click();
+  await expect(page.locator('.quick-add-menu > strong')).toHaveCount(0);
+  await expect(page.locator('.quick-add-menu button')).toHaveText(['Income','Expense','SMS expense','Bill']);
   await page.locator('.quick-add button[data-transaction-type="income"]').click();
   await expect(page.locator('select[name="type"]')).toHaveValue('income');
   await page.locator('[data-close]').first().click();
