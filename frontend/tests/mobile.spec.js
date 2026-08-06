@@ -10,8 +10,8 @@ const fixture = () => ({
   bills:[],goals:[],holdings:[],loans:[],widgets:['net-worth','income','expenses','surplus'],
 });
 
-const mockData = async (page) => {
-  let state=fixture();
+const mockData = async (page,initial=fixture()) => {
+  let state=initial;
   await page.route('**/api/data',async(route)=>{
     if(route.request().method()==='PUT'){state=route.request().postDataJSON();await route.fulfill({json:{revision:2,updatedAt:new Date().toISOString()}});return;}
     await route.fulfill({json:state});
@@ -61,6 +61,29 @@ test('mobile menu exposes every page without crowded labels',async({page})=>{
   await expect(page.locator('.mobile-menu nav a')).toHaveCount(13);
   await expect(page.locator('.mobile-menu a[href="#/assistant"]')).toBeVisible();
   await expect(page.locator('.mobile-menu a[href="#/loans"]')).toBeVisible();
+});
+
+test('budget generator uses historical category spending',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/budget');
+  await page.locator('#period-month').fill('2026-09');
+  await page.locator('#period-month').press('Tab');
+  await page.locator('[data-action="generate-budget"]').click();
+  await expect(page.locator('#toast')).toContainText('created from 1 historical period');
+  await expect(page.locator('.budget-card')).toContainText('Food');
+  await expect(page.locator('.budget-card')).toContainText('$200');
+});
+
+test('budget generator can analyse a full year of expense history',async({page})=>{
+  const state=fixture();
+  state.budgets=[];
+  state.transactions=Array.from({length:12},(_,index)=>{const date=new Date(Date.UTC(2025,8+index,2)).toISOString().slice(0,10);return {id:`expense-${index}`,date,description:'Groceries',merchant:'Market',amount:'100.00',currency:'USD',type:'expense',accountId:'acct-1',categoryId:'cat-food',status:'cleared'};});
+  await page.setViewportSize({width:390,height:844});await mockData(page,state);await page.goto('/#/budget');
+  await expect(page.locator('.smart-budget-toolbar')).toContainText('up to 12 completed periods');
+  await page.locator('#period-month').fill('2026-09');
+  await page.locator('#period-month').press('Tab');
+  await page.locator('[data-action="generate-budget"]').click();
+  await expect(page.locator('#toast')).toContainText('created from 12 historical periods');
+  await expect(page.locator('.budget-card')).toContainText('$100');
 });
 
 test('quick add, reports, and assistant are functional',async({page})=>{
