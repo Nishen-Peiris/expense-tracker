@@ -218,6 +218,35 @@ test('transactions scroll without pagination and search keeps focus',async({page
   await expect(page.locator('.transactions-card tbody tr')).toHaveCount(1);
 });
 
+test('bills goals and loans share responsive transaction tables',async({page})=>{
+  const state=fixture();
+  state.bills.push({id:'table-bill',name:'Internet',amount:'45.00',currency:'USD',frequency:'monthly',dueDate:'2026-08-20',autopay:false,paid:false});
+  state.goals.push({id:'table-goal',name:'Emergency fund',target:'5000.00',current:'1000.00',monthly:'200.00',targetDate:'2027-12-31',priority:'high',color:'#635bff',icon:'G',archived:false});
+  state.loans.push({id:'table-loan',name:'Car loan',lender:'Bank',principal:'10000.00',balance:'8000.00',annualRate:'8',monthlyPayment:'300.00',extraPayment:'0.00',interestType:'reducing'});
+  await page.setViewportSize({width:390,height:844});await mockData(page,state);
+  for(const [path,card] of [['bills','.bills-card'],['goals','.goals-card'],['loans','.loans-card']]){
+    await page.goto(`/#/${path}`);
+    await expect(page.locator(`${card} table`)).toBeVisible();
+    await expect(page.locator(`${card} thead`)).toBeHidden();
+    await expect(page.locator(`${card} .responsive-mobile-meta`).first()).toBeVisible();
+    await expect(page.locator(`${card} .pagination`)).toHaveCount(0);
+    await expect(page.locator('[data-list-sort]')).toBeVisible();
+  }
+  await page.goto('/#/bills');
+  await expect(page.getByRole('link',{name:'Calendar view'})).toHaveCount(0);
+  for(const [path,label] of [['goals','Add goal'],['loans','Add loan']]){
+    await page.goto(`/#/${path}`);
+    await expect(page.locator('.topbar').getByRole('button',{name:new RegExp(label)})).toBeVisible();
+    await expect(page.locator('#page').getByRole('button',{name:new RegExp(label)})).toHaveCount(0);
+  }
+});
+
+test('calendar keeps only its header add action',async({page})=>{
+  await mockData(page);await page.goto('/#/calendar');
+  await expect(page.locator('.topbar').getByRole('button',{name:/Add event/})).toBeVisible();
+  await expect(page.locator('#page').getByRole('button',{name:/^(Month|Week|Agenda|Event)$/})).toHaveCount(0);
+});
+
 test('budget generator uses historical category spending',async({page})=>{
   await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/budget');
   await page.locator('#period-month').fill('2026-09');
