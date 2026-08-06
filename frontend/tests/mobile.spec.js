@@ -35,7 +35,7 @@ test('390px mobile flow keeps actions contextual and updates totals',async({page
   await expect(page.locator('.mobile-header')).toBeVisible();
   await page.locator('.mobile-menu > summary').click();
   await page.locator('.mobile-menu a[href="#/transactions"]').click();
-  await expect(page.locator('summary', {hasText:'Add transaction'})).toHaveCount(1);
+  await expect(page.locator('summary',{hasText:'Add transaction'})).toHaveCount(1);
   await expect(page.locator('.transactions-card thead')).toBeHidden();
   await expect(page.locator('.transaction-mobile-meta').first()).toBeVisible();
   await expect(page.locator('.transactions-card tr').first()).toHaveCSS('border-radius','0px');
@@ -49,7 +49,7 @@ test('390px mobile flow keeps actions contextual and updates totals',async({page
   await page.locator('.mobile-menu > summary').click();
   await page.locator('.mobile-menu a[href="#/settings"]').click();
   await expect(page.locator('#period-month')).toHaveCount(0);
-  await expect(page.locator('summary', {hasText:'Add transaction'})).toHaveCount(0);
+  await expect(page.locator('summary',{hasText:'Add transaction'})).toHaveCount(0);
   await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
   const clear=await page.locator('button[data-action="clear"]').boundingBox();
   expect(clear.y+clear.height).toBeLessThanOrEqual(page.viewportSize().height);
@@ -61,6 +61,21 @@ test('mobile menu exposes every page without crowded labels',async({page})=>{
   await expect(page.locator('.mobile-menu nav a')).toHaveCount(13);
   await expect(page.locator('.mobile-menu a[href="#/assistant"]')).toBeVisible();
   await expect(page.locator('.mobile-menu a[href="#/loans"]')).toBeVisible();
+});
+
+test('simplified chrome integrates the period and uses bank-card proportions',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await mockData(page);await page.goto('/#/overview');
+  await expect(page.locator('.topbar .eyebrow')).toHaveCount(0);
+  await expect(page.locator('.period-context')).toHaveCount(0);
+  await expect(page.locator('.month-control')).toContainText('August 2026');
+  await expect(page.locator('.month-control')).toContainText('Aug 1, 2026 – Aug 31, 2026');
+  await page.goto('/#/accounts');
+  const card=await page.locator('.account-card').first().boundingBox();
+  expect(card.width/card.height).toBeCloseTo(1.586,1);
+  for(const path of ['transactions','reports','settings']){
+    await page.goto(`/#/${path}`);
+    await expect(page.getByText(/^(Import|Export|Print)/)).toHaveCount(0);
+  }
 });
 
 test('list pages share the same compact mobile surface',async({page})=>{
