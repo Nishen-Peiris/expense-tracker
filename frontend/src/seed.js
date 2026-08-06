@@ -5,12 +5,12 @@ export const demoData = () => ({
   version: 1,
   settings: { primaryCurrency: 'LKR', currencies: ['LKR', 'USD'], rates: { LKR: '1', USD: '302.50' }, locale: 'en-LK', dateFormat: 'medium', monthStart: 1, theme: 'system', timezone: 'Asia/Colombo', aiEnabled: false, budgetWarning: 80 },
   accounts: [
-    { id: id('acc', 1), name: 'Everyday Current', institution: 'Commercial Bank', type: 'current', group: 'asset', currency: 'LKR', balance: '428500.00', openingBalance: '320000.00', mask: '•••• 4821', includeNetWorth: true, archived: false, color: '#24745b', notes: '' },
+    { id: id('acc', 1), name: 'Everyday Current', institution: 'Commercial Bank', type: 'current', group: 'asset', currency: 'LKR', balance: '428500.00', openingBalance: '320000.00', mask: '•••• 4821', includeNetWorth: true, archived: false, color: '#635bff', notes: '' },
     { id: id('acc', 2), name: 'Family Savings', institution: 'Sampath Bank', type: 'savings', group: 'asset', currency: 'LKR', balance: '1650000.00', openingBalance: '1200000.00', mask: '•••• 1018', includeNetWorth: true, archived: false, color: '#4069a8', notes: '' },
     { id: id('acc', 3), name: 'Home Loan', institution: 'Local lender', type: 'mortgage', group: 'liability', currency: 'LKR', balance: '6850000.00', openingBalance: '8000000.00', mask: '•••• 7302', includeNetWorth: true, archived: false, color: '#b04d4d', notes: '' }
   ],
   categories: [
-    { id: id('cat', 1), name: 'Salary', type: 'income', icon: '↗', color: '#24745b', archived: false },
+    { id: id('cat', 1), name: 'Salary', type: 'income', icon: '↗', color: '#635bff', archived: false },
     { id: id('cat', 2), name: 'Groceries', type: 'expense', icon: '◫', color: '#d78a3d', archived: false },
     { id: id('cat', 3), name: 'Utilities', type: 'expense', icon: '⌁', color: '#5277b8', archived: false },
     { id: id('cat', 4), name: 'Transport', type: 'expense', icon: '◇', color: '#9467bd', archived: false },
@@ -32,7 +32,7 @@ export const demoData = () => ({
     { id: id('bill', 2), name: 'Home internet', payee: 'Internet provider', categoryId: id('cat', 3), amount: '7200.00', currency: 'LKR', frequency: 'monthly', dueDate: today, accountId: id('acc', 1), autopay: true, paid: true, reminder: 2, notes: '' }
   ],
   goals: [
-    { id: id('goal', 1), name: 'Emergency fund', description: 'Six months of expenses', type: 'safety', target: '1800000.00', current: '1120000.00', monthly: '90000.00', targetDate: '2027-05-01', priority: 'high', accountIds: [id('acc', 2)], color: '#24745b', icon: '⌂', archived: false },
+    { id: id('goal', 1), name: 'Emergency fund', description: 'Six months of expenses', type: 'safety', target: '1800000.00', current: '1120000.00', monthly: '90000.00', targetDate: '2027-05-01', priority: 'high', accountIds: [id('acc', 2)], color: '#635bff', icon: '⌂', archived: false },
     { id: id('goal', 2), name: 'House construction', description: 'Next building phase', type: 'property', target: '5000000.00', current: '1950000.00', monthly: '150000.00', targetDate: '2028-03-01', priority: 'medium', accountIds: [id('acc', 2)], color: '#5277b8', icon: '□', archived: false }
   ],
   holdings: [{ id: id('hold', 1), accountId: id('acc', 2), name: 'Treasury bond fund', symbol: 'TBF', quantity: '1200.00', averageCost: '102.50', currentPrice: '110.25', currency: 'LKR', assetClass: 'Government securities', dividends: '8500.00', institution: 'Fund manager', notes: '' }],
